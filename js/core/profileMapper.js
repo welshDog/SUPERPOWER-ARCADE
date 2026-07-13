@@ -2,9 +2,10 @@
  * profileMapper — turns a run's event log into a strength archetype + evidence notes.
  * Strength patterns only. Never diagnostic. Reveal is positive for every profile.
  */
-const SPA_PROFILES = (typeof module !== 'undefined' && module.exports)
-  ? require('../../data/profiles')
-  : window.SPA_PROFILES;
+let SPA_PROFILES;
+if (typeof module !== 'undefined' && module.exports) {
+  SPA_PROFILES = require('../../data/profiles');
+}
 
 function stats(events) {
   const responses = events.filter((e) => e.type === 'game_response');
@@ -87,7 +88,8 @@ function mapProfile(runJson) {
   const ids = { hyperfocus: 'hyperfocus_hunter', pattern: 'pattern_detective', systems: 'systems_architect', chaos: 'chaos_creator' };
   // Wild Card when nothing dominates: weak top score or a near-tie
   const archetypeId = (topScore < 40 || topScore - secondScore < 10) ? 'wild_card' : ids[topKey];
-  return { archetype: SPA_PROFILES[archetypeId], scores, evidence: buildEvidence(events, s) };
+  const profiles = SPA_PROFILES || (typeof window !== 'undefined' ? window.SPA_PROFILES : {});
+  return { archetype: profiles[archetypeId], scores, evidence: buildEvidence(events, s) };
 }
 
 if (typeof module !== 'undefined' && module.exports) { module.exports = { mapProfile }; }
