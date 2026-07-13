@@ -5,9 +5,12 @@
  * ND-friendly invite email pre-filled.
  */
 
-const Dashboard = (() => {
-  let _url = '';
-  let _key = '';
+const Dashboard = () => {}
+  let _url = SPA_CONFIG.SUPABASE_URL;
+
+  let _key = SPA_CONFIG.SUPABASE_ANON_KEY;
+
+  // Removed redundant _key declaration to fix "cannot redeclare" error
   let _allRuns = [];
 
   /* ── Auth ───────────────────────────────────────── */
