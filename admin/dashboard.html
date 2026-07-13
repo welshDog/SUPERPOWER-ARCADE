@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 Arcade Keeper Dashboard</title>
+  <style>
+    :root {
+      --bg: #0a0a14; --card: #141428; --border: #2a2a4a;
+      --cyan: #4ECDC4; --gold: #FFD700; --pink: #FF6B9D;
+      --text: #eaeaf5; --dim: #8a8aa8; --green: #2ECC71;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 24px; }
+    h1 { color: var(--cyan); font-size: 1.6rem; margin-bottom: 4px; }
+    .sub { color: var(--dim); font-size: .85rem; margin-bottom: 24px; }
+    #login-panel { max-width: 400px; margin: 80px auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; }
+    #login-panel h2 { color: var(--gold); margin-bottom: 16px; }
+    input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; margin-bottom: 12px; }
+    button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 600; }
+    .btn-primary { background: var(--cyan); color: #000; }
+    .btn-invite  { background: var(--gold); color: #000; font-size: .8rem; padding: 6px 14px; }
+    .btn-sm      { background: var(--border); color: var(--text); font-size: .8rem; padding: 6px 12px; }
+    #dashboard { display: none; }
+    .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; flex: 1; min-width: 140px; }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: var(--cyan); }
+    .stat-card .lbl { font-size: .8rem; color: var(--dim); }
+    #runs-list { display: flex; flex-direction: column; gap: 14px; }
+    .run-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .run-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .archetype-badge { background: var(--border); border-radius: 20px; padding: 4px 14px; font-size: .85rem; color: var(--gold); }
+    .run-meta { font-size: .75rem; color: var(--dim); }
+    .evidence-list { list-style: none; margin-bottom: 14px; }
+    .evidence-list li { padding: 5px 0; font-size: .88rem; border-bottom: 1px solid var(--border); }
+    .evidence-list li::before { content: '→ '; color: var(--cyan); }
+    .invite-block { background: var(--bg); border-radius: 8px; padding: 14px; display: none; margin-top: 12px; }
+    .invite-block textarea { width: 100%; min-height: 120px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 10px; font-size: .85rem; resize: vertical; }
+    .quest-badge { background: #1a1a3a; border: 1px solid var(--cyan); color: var(--cyan); border-radius: 6px; padding: 2px 8px; font-size: .75rem; margin-left: 8px; }
+    #error-msg { color: #FF4757; font-size: .85rem; margin-bottom: 10px; display: none; }
+    #loading { color: var(--dim); text-align: center; padding: 40px; }
+    .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+    .filter-row select { background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; }
+    .energy-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .energy-high { background: var(--green); }
+    .energy-mid  { background: var(--gold); }
+    .energy-low  { background: var(--pink); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-panel">
+  <h2>🔐 Keeper Access</h2>
+  <p style="color:var(--dim);font-size:.85rem;margin-bottom:16px;">Private dashboard. Arcade players never see this.</p>
+  <input type="password" id="keeper-key" placeholder="Enter your service key" autocomplete="off">
+  <div id="error-msg">Wrong key — try again.</div>
+  <button class="btn-primary" onclick="Dashboard.login()">Unlock Dashboard</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <h1>⚡ SUPERPOWER ARCADE — Keeper Dashboard</h1>
+  <p class="sub">Evidence first. Archetype below. Invite only who you mean it for.</p>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="num" id="stat-total">0</div><div class="lbl">Total Runs</div></div>
+    <div class="stat-card"><div class="num" id="stat-today">0</div><div class="lbl">Today</div></div>
+    <div class="stat-card"><div class="num" id="stat-quest">0</div><div class="lbl">Quest Code Runs</div></div>
+    <div class="stat-card"><div class="num" id="stat-top">—</div><div class="lbl">Top Archetype</div></div>
+  </div>
+
+  <div class="filter-row">
+    abel style="color:var(--dim);font-size:.85rem">Filter:</label>
+    <select id="filter-archetype" onchange="Dashboard.applyFilter()">
+      <option value="">All archetypes</option>
+      <option value="hyperfocus_hunter">Hyperfocus Hunter</option>
+      <option value="pattern_detective">Pattern Detective</option>
+      <option value="systems_architect">Systems Architect</option>
+      <option value="chaos_creator">Chaos Creator</option>
+      <option value="wild_card">Wild Card</option>
+    </select>
+    <select id="filter-quest" onchange="Dashboard.applyFilter()">
+      <option value="">All runs</option>
+      <option value="quest">Quest code only</option>
+    </select>
+    <button class="btn-sm" onclick="Dashboard.load()">↺ Refresh</button>
+  </div>
+
+  <div id="loading">Loading runs…</div>
+  <div id="runs-list"></div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
