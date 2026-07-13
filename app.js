@@ -182,9 +182,9 @@
     SPA.showScreen('screen-thanks');
     $('thanks-title').textContent = sent ? '📡 Run received by the Keeper.' : '🕹️ GG.';
     $('thanks-body').textContent = sent
-      ? 'If your run lights up the board, you'll hear from a real human. Watch your inbox.'
-      : 'Your run stayed on this device, as promised. Come back any time.';
-    localStorage.removeItem('spa_run');
+      ? "If your run lights up the board, you'll hear from a real human. Watch your inbox."
+      : 'Your run stayed on this device, as promised. Come back any time.'
+    localStorage.removeItem('spa_run')
   }
 
   // ---- quest codes ----
@@ -197,7 +197,7 @@
       localStorage.setItem('spa_quest', JSON.stringify({ code, ...row }));
       $('quest-feedback').textContent = `🔓 Welcome, ${row.invitee_name}. The Keeper is expecting you.`;
     } else {
-      $('quest-feedback').textContent = 'That key doesn't fit any lock here.';
+      $('quest-feedback').textContent = 'That key doesn fit any lock here.';
     }
   }
 
