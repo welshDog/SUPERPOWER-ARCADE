@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUPERPOWER ARCADE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="particle-canvas"></canvas>
+  <main id="app">
+
+    <section id="screen-landing" class="screen">
+      <h1 class="glow">SUPERPOWER<br>ARCADE</h1>
+      <p class="tagline">The Arcade Keeper has opened the vault.<br>Find your superpower.</p>
+      <button id="btn-enter" class="btn btn-primary">INSERT COIN ▶</button>
+      <button id="btn-quest-code" class="btn btn-ghost">🔑 Got a key from a friend?</button>
+      <div id="quest-entry" class="hidden">
+        <input id="quest-input" class="input" placeholder="ENTER-CODE" autocomplete="off" maxlength="24">
+        <button id="btn-quest-go" class="btn btn-secondary">Unlock</button>
+        <p id="quest-feedback" class="small"></p>
+      </div>
+    </section>
+
+    <section id="screen-energy" class="screen hidden">
+      <h2>How's the engine today?</h2>
+      <div class="row">
+        <button class="btn btn-energy" data-energy="low">🌙 Low</button>
+        <button class="btn btn-energy" data-energy="medium">🌤 Medium</button>
+        <button class="btn btn-energy" data-energy="high">🔥 High</button>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen hidden">
+      <div class="hud">
+        <span id="hud-icon"></span>
+        <span id="hud-timer"></span>
+        <span id="hud-coins">🪙 0</span>
+      </div>
+      <div id="game-content"></div>
+      <div id="game-feedback" class="feedback"></div>
+    </section>
+
+    <section id="screen-fork" class="screen hidden">
+      <div class="fork-card">
+        <p id="fork-prompt"></p>
+        <div id="fork-options" class="col"></div>
+      </div>
+    </section>
+
+    <section id="screen-reveal" class="screen hidden">
+      <p class="small">THE VAULT OPENS…</p>
+      <div id="reveal-emoji" class="reveal-emoji"></div>
+      <h2 id="reveal-name" class="glow"></h2>
+      <p id="reveal-blurb" class="blurb"></p>
+      <button id="btn-to-share" class="btn btn-primary">▶ Continue</button>
+    </section>
+
+    <section id="screen-share" class="screen hidden">
+      <h2>📡 Send your run to the Arcade Keeper?</h2>
+      <p id="share-greeting" class="small"></p>
+      <p class="small">Legendary runs get invited to something real. Your run data leaves this device
+         only if you tap send — otherwise it stays yours and disappears.</p>
+      <input id="share-name" class="input" placeholder="Your name" maxlength="80">
+      <input id="share-contact" class="input" placeholder="Email or Discord" maxlength="120">
+      <div class="row">
+        <button id="btn-share-send" class="btn btn-primary">🚀 Send my run</button>
+        <button id="btn-share-skip" class="btn btn-ghost">Keep it to myself</button>
+      </div>
+      <p id="share-feedback" class="small"></p>
+    </section>
+
+    <section id="screen-thanks" class="screen hidden">
+      <h2 id="thanks-title">🕹️ GG.</h2>
+      <p id="thanks-body" class="small"></p>
+      <button id="btn-again" class="btn btn-secondary">Play again</button>
+    </section>
+
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/agents/DifficultyDial.js"></script>
+  <script src="js/agents/DopamineDJ.js"></script>
+  <script src="js/systems/ParticleSystem.js"></script>
+  <script src="js/core/SignalTracker.js"></script>
+  <script src="js/core/ForkFlow.js"></script>
+  <script src="js/core/profileMapper.js"></script>
+  <script src="js/core/runPayload.js"></script>
+  <script src="js/core/api.js"></script>
+  <script src="data/forks.js"></script>
+  <script src="data/profiles.js"></script>
+  <script src="js/games/patternBlitz.js"></script>
+  <script src="js/games/colorCascade.js"></script>
+  <script src="js/games/numberRush.js"></script>
+  <script src="js/games/vaultDoor.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
