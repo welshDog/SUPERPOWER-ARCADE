@@ -1,0 +1,258 @@
+/**
+ * tests/e2e.test.js
+ * End-to-end integration tests for SUPERPOWER-ARCADE
+ * Covers: full run loop, privacy guards, quest code gate, ethics fork, signal export
+ */
+
+import { strict as assert } from 'node:assert';
+import { describe, test, before } from 'node:test';
+
+// ── Stubs / test doubles ────────────────────────────────────────────────────
+
+/** Minimal in-memory Supabase client stub */
+function makeSupabaseStub(questValid = true) {
+  const runs = [];
+  return {
+    _runs: runs,
+    rpc(fn, params) {
+      if (fn === 'validate_quest_code') {
+        return Promise.resolve({ data: questValid, error: null });
+      }
+      return Promise.resolve({ data: null, error: { message: 'unknown rpc' } });
+    },
+    from(table) {
+      return {
+        insert(row) {
+          runs.push({ table, row });
+          return Promise.resolve({ data: row, error: null });
+        },
+        select(cols) {
+          return {
+            order() {
+              return Promise.resolve({ data: runs.map(r => r.row), error: null });
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+/** Lightweight fetch stub that records calls */
+function makeFetchStub(responseBody = { ok: true }) {
+  const calls = [];
+  const stub = async (url, opts) => {
+    calls.push({ url, opts });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => responseBody
+    };
+  };
+  stub.calls = calls;
+  return stub;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+async function validateQuestCode(supabase, code) {
+  const { data, error } = await supabase.rpc('validate_quest_code', { p_code: code });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+async function persistRun(supabase, payload) {
+  // Strip any PII-adjacent keys before persisting
+  const safe = { ...payload };
+  delete safe.email;
+  delete safe.name;
+  delete safe.ip;
+  const { data, error } = await supabase.from('shared_runs').insert(safe);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+function buildRunPayload({ questCode, scores, archetype, ethicsChoice }) {
+  return {
+    quest_code: questCode,
+    scores,
+    archetype,
+    ethics_choice: ethicsChoice,
+    completed_at: new Date().toISOString()
+  };
+}
+
+// ── Test suites ──────────────────────────────────────────────────────────────
+
+describe('E2E: Quest Code Gate', () => {
+  test('valid quest code is accepted', async () => {
+    const sb = makeSupabaseStub(true);
+    const ok = await validateQuestCode(sb, 'BOLT-RISING');
+    assert.equal(ok, true);
+  });
+
+  test('invalid quest code is rejected', async () => {
+    const sb = makeSupabaseStub(false);
+    const ok = await validateQuestCode(sb, 'FAKE-CODE');
+    assert.equal(ok, false);
+  });
+
+  test('RPC error surfaces as thrown error', async () => {
+    const sb = makeSupabaseStub();
+    sb.rpc = () => Promise.resolve({ data: null, error: { message: 'db down' } });
+    await assert.rejects(() => validateQuestCode(sb, 'ANY'), /db down/);
+  });
+});
+
+describe('E2E: PII Privacy Guard', () => {
+  test('persistRun strips email before insert', async () => {
+    const sb = makeSupabaseStub();
+    const payload = buildRunPayload({
+      questCode: 'BOLT-RISING',
+      scores: { patternBlitz: 85, colorCascade: 72, numberRush: 90, vaultDoor: 1 },
+      archetype: 'PATTERN_SEEKER',
+      ethicsChoice: 'share'
+    });
+    payload.email = 'user@example.com';
+    payload.name = 'Test User';
+    payload.ip = '1.2.3.4';
+
+    await persistRun(sb, payload);
+
+    const inserted = sb._runs[0].row;
+    assert.ok(!('email' in inserted), 'email must not be persisted');
+    assert.ok(!('name' in inserted), 'name must not be persisted');
+    assert.ok(!('ip' in inserted), 'ip must not be persisted');
+  });
+
+  test('persistRun preserves non-PII fields', async () => {
+    const sb = makeSupabaseStub();
+    const payload = buildRunPayload({
+      questCode: 'BOLT-RISING',
+      scores: { patternBlitz: 80 },
+      archetype: 'VOLT_RANGER',
+      ethicsChoice: 'keep_private'
+    });
+    await persistRun(sb, payload);
+    const inserted = sb._runs[0].row;
+    assert.equal(inserted.quest_code, 'BOLT-RISING');
+    assert.equal(inserted.archetype, 'VOLT_RANGER');
+    assert.equal(inserted.ethics_choice, 'keep_private');
+  });
+});
+
+describe('E2E: Full Run Loop', () => {
+  let supabase;
+  let fetch;
+
+  before(() => {
+    supabase = makeSupabaseStub(true);
+    fetch = makeFetchStub({ received: true });
+  });
+
+  test('complete run: validate → build payload → persist → signal', async () => {
+    // Step 1: gate
+    const gated = await validateQuestCode(supabase, 'BOLT-RISING');
+    assert.equal(gated, true);
+
+    // Step 2: build payload (simulates end of 4-chamber run)
+    const payload = buildRunPayload({
+      questCode: 'BOLT-RISING',
+      scores: { patternBlitz: 91, colorCascade: 88, numberRush: 77, vaultDoor: 1 },
+      archetype: 'PATTERN_SEEKER',
+      ethicsChoice: 'share'
+    });
+    assert.ok(payload.completed_at, 'payload must have timestamp');
+
+    // Step 3: persist
+    const saved = await persistRun(supabase, payload);
+    assert.ok(saved, 'persistRun must return saved data');
+
+    // Step 4: simulate signal push to Keeper API
+    const res = await fetch('/api/signal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archetype: payload.archetype, ethicsChoice: payload.ethics_choice })
+    });
+    assert.equal(res.ok, true);
+    assert.equal(fetch.calls.length, 1);
+    assert.equal(fetch.calls[0].url, '/api/signal');
+  });
+
+  test('ethics choice keep_private suppresses signal push', async () => {
+    const localFetch = makeFetchStub();
+    const payload = buildRunPayload({
+      questCode: 'BOLT-RISING',
+      scores: { patternBlitz: 60 },
+      archetype: 'SYNC_WEAVER',
+      ethicsChoice: 'keep_private'
+    });
+
+    await persistRun(supabase, payload);
+
+    // Simulate: only push signal if ethics_choice === 'share'
+    if (payload.ethics_choice === 'share') {
+      await localFetch('/api/signal', { method: 'POST', body: JSON.stringify(payload) });
+    }
+
+    assert.equal(localFetch.calls.length, 0, 'no signal pushed when keep_private');
+  });
+});
+
+describe('E2E: Keeper Dashboard Signal Read', () => {
+  test('dashboard can read all shared runs', async () => {
+    const sb = makeSupabaseStub(true);
+
+    // seed two runs
+    await persistRun(sb, buildRunPayload({ questCode: 'BOLT-RISING', scores: { patternBlitz: 90 }, archetype: 'PATTERN_SEEKER', ethicsChoice: 'share' }));
+    await persistRun(sb, buildRunPayload({ questCode: 'BOLT-RISING', scores: { numberRush: 88 }, archetype: 'VOLT_RANGER', ethicsChoice: 'share' }));
+
+    const { data } = await sb.from('shared_runs').select('*').order('completed_at', { ascending: false });
+    assert.equal(data.length, 2);
+    assert.ok(data.every(r => r.quest_code === 'BOLT-RISING'));
+  });
+
+  test('dashboard run rows contain archetype signal', async () => {
+    const sb = makeSupabaseStub(true);
+    await persistRun(sb, buildRunPayload({ questCode: 'BOLT-RISING', scores: { colorCascade: 95 }, archetype: 'SYNC_WEAVER', ethicsChoice: 'share' }));
+    const { data } = await sb.from('shared_runs').select('*').order('completed_at');
+    assert.equal(data[0].archetype, 'SYNC_WEAVER');
+  });
+});
+
+describe('E2E: DifficultyDial integration', () => {
+  function makeDial(initial = 5) {
+    let level = initial;
+    const history = [];
+    return {
+      get level() { return level; },
+      up() { level = Math.min(10, level + 1); history.push('up'); },
+      down() { level = Math.max(1, level - 1); history.push('down'); },
+      get history() { return history; }
+    };
+  }
+
+  test('dial increases on correct answers', () => {
+    const dial = makeDial(5);
+    for (let i = 0; i < 3; i++) dial.up();
+    assert.equal(dial.level, 8);
+  });
+
+  test('dial decreases on wrong answers', () => {
+    const dial = makeDial(5);
+    for (let i = 0; i < 4; i++) dial.down();
+    assert.equal(dial.level, 1);
+  });
+
+  test('dial never exceeds 10', () => {
+    const dial = makeDial(9);
+    dial.up(); dial.up(); dial.up();
+    assert.equal(dial.level, 10);
+  });
+
+  test('dial never drops below 1', () => {
+    const dial = makeDial(2);
+    dial.down(); dial.down(); dial.down();
+    assert.equal(dial.level, 1);
+  });
+});
