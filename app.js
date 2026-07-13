@@ -31,7 +31,7 @@
 
   function setCoins(n) {
     SPA.state.coins = Math.max(0, n);
-    $('hud-coins').textContent = `🪙 ${SPA.state.coins}`;
+    $('hud-coins').textContent = `\uD83E\uDE99 ${SPA.state.coins}`;
   }
 
   function feedback(msg, kind) {
@@ -61,7 +61,7 @@
         const analysis = SPA.state.dial.recordResponse(correct, ms);
         if (analysis.action !== 'maintain') {
           SPA.state.tracker.record('difficulty_change', { game: gameId, action: analysis.action, level: analysis.level });
-          feedback(analysis.action === 'increase' ? '🚀 Level up!' : '🛡️ Easing off…', analysis.action === 'increase' ? 'success' : 'warning');
+          feedback(analysis.action === 'increase' ? '\uD83D\uDE80 Level up!' : '\uD83D\uDEE1\uFE0F Easing off\u2026', analysis.action === 'increase' ? 'success' : 'warning');
         }
         const reward = SPA.state.dj.processResponse(correct, ms, SPA.state.streak);
         if (reward.drop) {
@@ -152,7 +152,7 @@
     SPA.showScreen('screen-share');
     const q = SPA.state.quest;
     if (q) {
-      $('share-greeting').textContent = `🔑 ${q.invitee_name} — ${q.message}`;
+      $('share-greeting').textContent = `\uD83D\uDD11 ${q.invitee_name} \u2014 ${q.message}`;
       $('share-name').value = q.invitee_name;
     }
   }
@@ -170,7 +170,7 @@
       btn.disabled = true;
       const res = await window.SPA_API.submitRun(payload, window.SPA_CONFIG);
       if (res.ok) return thanks(true);
-      $('share-feedback').textContent = `Transmission failed (${res.status}) — try again?`;
+      $('share-feedback').textContent = `Transmission failed (${res.status}) \u2014 try again?`;
       btn.disabled = false;
     } catch (e) {
       $('share-feedback').textContent = e.message;
@@ -180,24 +180,24 @@
 
   function thanks(sent) {
     SPA.showScreen('screen-thanks');
-    $('thanks-title').textContent = sent ? '📡 Run received by the Keeper.' : '🕹️ GG.';
+    $('thanks-title').textContent = sent ? '\uD83D\uDCE1 Run received by the Keeper.' : '\uD83D\uDD79\uFE0F GG.';
     $('thanks-body').textContent = sent
       ? "If your run lights up the board, you'll hear from a real human. Watch your inbox."
-      : 'Your run stayed on this device, as promised. Come back any time.'
-    localStorage.removeItem('spa_run')
+      : 'Your run stayed on this device, as promised. Come back any time.';
+    localStorage.removeItem('spa_run');
   }
 
   // ---- quest codes ----
   async function tryQuestCode() {
     const code = $('quest-input').value.trim().toUpperCase();
     if (!code) return;
-    $('quest-feedback').textContent = 'Checking the vault…';
+    $('quest-feedback').textContent = 'Checking the vault\u2026';
     const row = await window.SPA_API.redeemQuestCode(code, window.SPA_CONFIG);
     if (row) {
       localStorage.setItem('spa_quest', JSON.stringify({ code, ...row }));
-      $('quest-feedback').textContent = `🔓 Welcome, ${row.invitee_name}. The Keeper is expecting you.`;
+      $('quest-feedback').textContent = `\uD83D\uDD13 Welcome, ${row.invitee_name}. The Keeper is expecting you.`;
     } else {
-      $('quest-feedback').textContent = 'That key doesn fit any lock here.';
+      $('quest-feedback').textContent = "That key doesn't fit any lock here.";
     }
   }
 
