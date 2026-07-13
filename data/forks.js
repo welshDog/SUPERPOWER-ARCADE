@@ -10,10 +10,10 @@ const SPA_FORKS = [
   {
     id: 'pip-promise',
     chamberAfter: 1,
-    prompt: `Behind a locked gate, a little spark called Pip is stuck. The gate won't open yet. Pip: "Promise you'll come back for me?"`,
+    prompt: 'Behind a locked gate, a little spark called Pip is stuck. The gate won’t open yet. Pip: “Promise you’ll come back for me?”',
     options: [
       { id: 'promise', label: '\u{1F91D} I promise', signal: 'promise_made' },
-      { id: 'shrug', label: `\u{1F937} Maybe… let's see`, signal: 'promise_avoided' }
+      { id: 'shrug', label: '\u{1F937} Maybe… let’s see', signal: 'promise_avoided' }
     ]
   },
   {
@@ -38,7 +38,7 @@ const SPA_FORKS = [
   {
     id: 'stranger',
     chamberAfter: 3,
-    prompt: `Another runner's attempt just collapsed — they lost everything at the last chamber. They're sitting by the door.`,
+    prompt: 'Another runner’s attempt just collapsed — they lost everything at the last chamber. They’re sitting by the door.',
     options: [
       { id: 'share', label: '\u{1FA99} Share 10 of your coins', signal: 'generous', costsCoins: 10 },
       { id: 'keep', label: '\u{1F4B0} Keep your stack', signal: 'self_keep' }
@@ -47,7 +47,7 @@ const SPA_FORKS = [
   {
     id: 'pip-payoff',
     chamberAfter: 3,
-    prompt: `Two doors ahead. A golden bonus door, glowing with coins. And the rusty gate back to Pip — it's unlocked now.`,
+    prompt: 'Two doors ahead. A golden bonus door, glowing with coins. And the rusty gate back to Pip — it’s unlocked now.',
     options: [
       { id: 'pip', label: '\u{1F511} Go back for Pip', signal: 'promise_kept' },
       { id: 'gold', label: '✨ Take the golden door', signal: 'promise_broken' }
