@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Repo:** all paths relative to `H:\HYPERFOCUSZONE\HperCore\SUPERPOWER-ARCADE`. Source engine repo: `H:\HYPERFOCUSZONE\HperCore\-ULTIMATE-ADHD-BRAIN-ARCADE-` (read-only; never modify it).
-- **Zero runtime dependencies.** No npm packages, no bundler, no framework. `package.json` exists only to define `"scripts": {"test": "node --test tests/"}`.
+- **Zero runtime dependencies.** No npm packages, no bundler, no framework. `package.json` exists only to define `"scripts": {"test": "node --test"}`.
 - **Nothing leaves the device until the share tap.** No fetch calls anywhere except `js/core/api.js`, and `api.js` functions are only invoked from the share screen and quest-code entry.
 - **No diagnosis language anywhere** (code, copy, comments, dashboard). Archetypes are strength patterns only. Reveal copy is positive-only.
 - **Same chambers and forks for every player.** `DifficultyDial` adapts difficulty within a game; it never changes which chambers/forks appear.
@@ -21,7 +21,7 @@
   else { window.TheExport = TheExport; }
   ```
 - **Local run:** `python -m http.server 8123` from repo root → http://localhost:8123 (game) and http://localhost:8123/admin/ (dashboard).
-- **Tests:** `npm test` (= `node --test tests/`) from repo root. All tests must pass before every commit.
+- **Tests:** `npm test` (= `node --test`) from repo root. All tests must pass before every commit.
 - **Commits:** small, after every task, message style `feat:`/`test:`/`docs:`/`chore:`. Never commit `.env` (there isn't one — the anon key in `js/config.js` is public by design; the service key must NEVER appear in this repo).
 - **localStorage keys:** all prefixed `spa_` (`spa_run`, `spa_quest`).
 
@@ -89,7 +89,7 @@ Expected: `v18.x` or higher (needed for `node --test`). If lower, stop and flag.
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test"
   }
 }
 ```
