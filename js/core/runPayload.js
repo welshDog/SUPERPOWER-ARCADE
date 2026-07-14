@@ -1,5 +1,5 @@
 /** Builds the consented share payload. Only ever called from the share screen. */
-function buildRunPayload({ runJson, profile, name, contact, questCode }) {
+function buildRunPayload({ runJson, profile, name, contact, questCode, broskiCoins = 0 }) {
   const player_name = (name || '').trim();
   const contactClean = (contact || '').trim();
   if (!player_name) throw new Error('name is required to share a run');
@@ -10,6 +10,7 @@ function buildRunPayload({ runJson, profile, name, contact, questCode }) {
     quest_code: (questCode || '').trim() ? questCode.trim().toUpperCase() : null,
     archetype: profile.archetype.id,
     evidence: profile.evidence,
+    broski_coins: broskiCoins,
     signals: { meta: runJson.meta, events: runJson.events, scores: profile.scores }
   };
 }

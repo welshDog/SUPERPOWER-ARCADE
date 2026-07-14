@@ -13,6 +13,7 @@ test('builds a payload matching shared_runs columns', () => {
     quest_code: 'BOLT-RISING',
     archetype: 'wild_card',
     evidence: ['note'],
+    broski_coins: 0,
     signals: { meta: runJson.meta, events: runJson.events, scores: { hyperfocus: 1 } }
   });
 });

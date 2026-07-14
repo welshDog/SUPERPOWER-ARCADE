@@ -17,6 +17,7 @@ create table if not exists public.shared_runs (
   signals       jsonb       not null,
   quest_code    text,
   energy        text,
+  broski_coins  integer     not null default 0,
   shared_at     timestamptz not null    default now()
 );
 
@@ -63,7 +64,7 @@ on conflict (code) do nothing;
 -- Keeper dashboard view (service_role only)
 create or replace view public.keeper_runs as
   select id, created_at, archetype, archetype_name,
-         evidence, signals, quest_code, energy, shared_at
+         evidence, signals, quest_code, energy, broski_coins, shared_at
   from public.shared_runs order by shared_at desc;
 
 revoke all on public.keeper_runs from anon, authenticated;
