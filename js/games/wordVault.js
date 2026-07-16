@@ -142,7 +142,6 @@
 
         timer = setTimeout(() => {
           logic.timeout();
-          ctx.onRound(false, 12000);
           ctx.feedback('TIMEOUT!', 'warning');
           renderRound();
         }, state.timeLimit);
