@@ -12,7 +12,9 @@ create table if not exists public.shared_runs (
   id            uuid        primary key default gen_random_uuid(),
   created_at    timestamptz not null    default now(),
   archetype     text        not null,
-  archetype_name text       not null,
+  archetype_name text       not null default '',
+  player_name   text        not null default '',
+  contact       text        not null default '',
   evidence      jsonb       not null,
   signals       jsonb       not null,
   quest_code    text,
@@ -30,6 +32,8 @@ create policy "insert_only"
 create table if not exists public.quest_codes (
   code        text        primary key,
   label       text        not null,
+  invitee_name text        not null default '',
+  message      text        not null default 'The Keeper is expecting you.',
   active      boolean     not null default true,
   created_at  timestamptz not null default now(),
   used_count  integer     not null default 0
@@ -38,32 +42,31 @@ create table if not exists public.quest_codes (
 alter table public.quest_codes enable row level security;
 -- Zero policies = zero direct client access
 
--- RPC: validate a quest code
-create or replace function public.validate_quest_code(p_code text)
-returns jsonb language plpgsql security definer set search_path = public
+-- RPC: redeem a quest code (the name js/core/api.js calls)
+create or replace function public.redeem_quest_code(p_code text)
+returns table (invitee_name text, message text)
+language plpgsql security definer set search_path = public
 as $$
-declare v_row public.quest_codes%rowtype;
 begin
-  select * into v_row from public.quest_codes
-  where code = upper(trim(p_code)) and active = true;
-  if not found then return jsonb_build_object('valid', false); end if;
-  update public.quest_codes set used_count = used_count + 1
-  where code = upper(trim(p_code));
-  return jsonb_build_object('valid', true, 'label', v_row.label);
+  return query
+    update public.quest_codes qc
+       set used_count = qc.used_count + 1
+     where qc.code = upper(trim(p_code)) and qc.active = true
+    returning qc.invitee_name, qc.message;
 end;
 $$;
 
-revoke execute on function public.validate_quest_code(text) from public;
-grant  execute on function public.validate_quest_code(text) to anon;
+revoke execute on function public.redeem_quest_code(text) from public;
+grant  execute on function public.redeem_quest_code(text) to anon;
 
 -- Seed Evan's key
-insert into public.quest_codes (code, label, active)
-values ('BOLT-RISING', 'Evan - BOLT-RISING VIP Access', true)
+insert into public.quest_codes (code, label, invitee_name, message, active)
+values ('BOLT-RISING', 'Evan - BOLT-RISING VIP Access', 'Evan', 'The Keeper has been waiting for you. Show us what you''ve got.', true)
 on conflict (code) do nothing;
 
 -- Keeper dashboard view (service_role only)
 create or replace view public.keeper_runs as
-  select id, created_at, archetype, archetype_name,
+  select id, created_at, archetype, archetype_name, player_name, contact,
          evidence, signals, quest_code, energy, broski_coins, shared_at
   from public.shared_runs order by shared_at desc;
 
