@@ -8,6 +8,9 @@ import { strict as assert } from 'node:assert';
 import { describe, test, before } from 'node:test';
 import ForkFlow from '../js/core/ForkFlow.js';
 import SignalTracker from '../js/core/SignalTracker.js';
+import RunStateStore from '../js/core/RunStateStore.js';
+import DifficultyDial from '../js/agents/DifficultyDial.js';
+import DopamineDJ from '../js/agents/DopamineDJ.js';
 
 // ── Stubs / test doubles ────────────────────────────────────────────────────
 
@@ -274,5 +277,79 @@ describe('E2E: v2 flow integration (Lost Score repair window + resume)', () => {
     t.record('finished_after_resume', {});
     assert.equal(t.count('run_resumed'), 1);
     assert.equal(t.count('finished_after_resume'), 1);
+  });
+
+  test('resuming advances past the finished chamber instead of replaying it (queue-flush semantics)', () => {
+    // persistRun saves chamberIndex = the chamber that just FINISHED (see afterChamber).
+    // The resume entry point must behave exactly like nextForkOrChamber(index), i.e.
+    // flush any pending forks first, otherwise advance to index + 1 — never re-run index.
+    const CHAMBERS = ['pattern-blitz', 'color-cascade', 'number-rush', 'word-vault', 'scramble', 'vault-door'];
+    function nextForkOrChamberSim(ff, index) {
+      const fork = ff.next();
+      if (fork) return { type: 'fork', id: fork.id };
+      const nextIndex = index + 1;
+      if (nextIndex < CHAMBERS.length) return { type: 'chamber', id: CHAMBERS[nextIndex] };
+      return { type: 'reveal' };
+    }
+
+    // Case 1: restored queue has a pending fork (e.g. a re-queued repair scene) -> fork shown, not a replay.
+    const ffWithFork = new ForkFlow([]);
+    ffWithFork.queue.push({ id: 'lost-score-repair', prompt: '', options: [] });
+    assert.deepEqual(nextForkOrChamberSim(ffWithFork, 3), { type: 'fork', id: 'lost-score-repair' });
+
+    // Case 2: restored queue is empty -> advances to the NEXT chamber, not a replay of the finished one.
+    const ffEmpty = new ForkFlow([]);
+    assert.deepEqual(nextForkOrChamberSim(ffEmpty, 3), { type: 'chamber', id: 'scramble' });
+
+    // Case 3: the finished chamber was the last one -> reveal, not a replay of vault-door.
+    const ffAtEnd = new ForkFlow([]);
+    assert.deepEqual(nextForkOrChamberSim(ffAtEnd, 5), { type: 'reveal' });
+  });
+
+  test('save/resume round-trips DifficultyDial and DopamineDJ state', () => {
+    function memStorage() {
+      const m = new Map();
+      return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
+    }
+
+    const dial = new DifficultyDial({ windowSize: 5, boredomThresholdMs: 600, frustrationThreshold: 3 });
+    dial.reset(1);
+    dial.recordResponse(true, 400);
+    dial.recordResponse(false, 900);
+
+    const dj = new DopamineDJ({ baseDropChance: 0.15, streakMultiplier: 0.05 });
+    dj.initializeSession(0);
+    dj.state.wallet = 7;
+    dj.state.sessionCoins = 7;
+    dj.state.momentum = 40;
+
+    const store = new RunStateStore({ storage: memStorage() });
+    store.save({
+      chamberIndex: 1,
+      coins: 7,
+      streak: 0,
+      sceneQueue: [],
+      trackerJson: { meta: {}, events: [] },
+      dialState: dial.state,
+      djState: dj.state
+    });
+
+    const loaded = store.load();
+
+    // Restore onto FRESH instances, exactly as the resume handler does after newRunState().
+    const freshDial = new DifficultyDial({ windowSize: 5, boredomThresholdMs: 600, frustrationThreshold: 3 });
+    freshDial.reset(1);
+    freshDial.state = loaded.dialState;
+
+    const freshDj = new DopamineDJ({ baseDropChance: 0.15, streakMultiplier: 0.05 });
+    freshDj.initializeSession(0);
+    freshDj.state = loaded.djState;
+
+    assert.deepEqual(freshDial.state, dial.state);
+    assert.equal(freshDial.state.currentDifficulty, dial.state.currentDifficulty);
+    assert.equal(freshDial.state.consecutiveErrors, 1);
+    assert.deepEqual(freshDj.state, dj.state);
+    assert.equal(freshDj.getWalletBalance(), 7);
+    assert.equal(freshDj.getSessionEarnings(), 7);
   });
 });

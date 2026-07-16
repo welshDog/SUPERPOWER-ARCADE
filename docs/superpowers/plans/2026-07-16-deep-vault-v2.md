@@ -833,12 +833,17 @@ function persistRun(index) {
     sceneQueue: SPA.state.forkFlow.queue.map(f => f.id),
     trackerJson: SPA.state.tracker.toJSON(),
     lostScorePending: !!SPA.state.lostScore?.pendingRepair,
-    resumed: SPA.state.resumed
+    resumed: SPA.state.resumed,
+    dialState: SPA.state.dial.state,
+    djState: SPA.state.dj.state
   });
 }
 ```
 
-On `DOMContentLoaded`, before showing the landing screen: if `new RunStateStore({storage: localStorage}).load()` returns a run, show `screen-resume` instead. "Continue" → rebuild state (`newRunState()`, `tracker.restore(saved.trackerJson)`, restore coins/streak, `store.markResumed()` → `tracker.record('run_resumed', { resumeGapMs })`, set `SPA.state.resumed = true`, re-queue forks whose ids are in `sceneQueue`, re-queue the repair scene if `lostScorePending`, then `runChamber(saved.chamberIndex)`). "Start fresh" → `store.clear()` → landing.
+On `DOMContentLoaded`, before showing the landing screen: if `new RunStateStore({storage: localStorage}).load()` returns a run, show `screen-resume` instead. "Continue" → rebuild state (`newRunState()`, `tracker.restore(saved.trackerJson)`, restore coins/streak, restore `SPA.state.dial.state`/`SPA.state.dj.state` from `saved.dialState`/`saved.djState`, `store.markResumed()` → `tracker.record('run_resumed', { resumeGapMs })`, set `SPA.state.resumed = true`, re-queue forks whose ids are in `sceneQueue`, re-queue the repair scene if `lostScorePending`, then **`nextForkOrChamber(saved.chamberIndex)`** — not `runChamber(saved.chamberIndex)`). "Start fresh" → `store.clear()` → landing.
+
+> **Correction from Task 6 review:** resuming must flush pending forks then advance past the completed chamber via `nextForkOrChamber` — calling `runChamber(savedRun.chamberIndex)` directly replayed the already-finished chamber and double-recorded its evidence (Bro's call, fixed). `chamberIndex` in the saved record is always the chamber that just *finished* (it's written from `afterChamber(index)`), so the resume entry point has to reuse the same fork-flush-then-advance logic as the rest of the normal flow, not re-enter the finished chamber directly. Also added: `dialState`/`djState` are now persisted and restored alongside coins/streak/tracker so a resumed run keeps its `DifficultyDial`/`DopamineDJ` state instead of resetting it.
+
 6. In `reveal()`: `if (SPA.state.resumed) SPA.state.tracker.record('finished_after_resume', {});` and `SPA.state.store.clear()`.
 7. In `thanks()`: also `localStorage.removeItem('spa_saved_run')` (belt and braces with `reveal`'s clear).
 

@@ -151,7 +151,9 @@
       sceneQueue: SPA.state.forkFlow.queue.map((f) => f.id),
       trackerJson: SPA.state.tracker.toJSON(),
       lostScorePending: !!SPA.state.lostScore?.pendingRepair,
-      resumed: SPA.state.resumed
+      resumed: SPA.state.resumed,
+      dialState: SPA.state.dial.state,
+      djState: SPA.state.dj.state
     });
   }
 
@@ -282,6 +284,8 @@
         SPA.state.tracker.restore(savedRun.trackerJson);
         setCoins(savedRun.coins);
         SPA.state.streak = savedRun.streak;
+        if (savedRun.dialState) SPA.state.dial.state = savedRun.dialState;
+        if (savedRun.djState) SPA.state.dj.state = savedRun.djState;
         (savedRun.sceneQueue || []).forEach((id) => {
           const fork = window.SPA_FORKS.find((f) => f.id === id);
           if (fork) SPA.state.forkFlow.queue.push(fork);
@@ -294,7 +298,12 @@
         const { resumeGapMs } = SPA.state.store.markResumed();
         SPA.state.resumed = true;
         SPA.state.tracker.record('run_resumed', { resumeGapMs });
-        runChamber(savedRun.chamberIndex);
+        // The saved chamberIndex is the chamber that had already FINISHED at save
+        // time (persistRun is called from afterChamber, post-completion). Re-running
+        // it would replay/double-record it. nextForkOrChamber is the same function the
+        // normal flow uses after a chamber finishes: it flushes any pending forks
+        // (including a re-queued repair scene) first, then advances to the next chamber.
+        nextForkOrChamber(savedRun.chamberIndex);
       });
       $('btn-start-fresh').addEventListener('click', () => {
         new RunStateStore({ storage: window.localStorage }).clear();
