@@ -48,6 +48,19 @@
       </div>
     </section>
 
+    <section id="screen-resume" class="screen hidden">
+      <h2>🗝️ The vault remembers you.</h2>
+      <p id="resume-detail">Your run is saved exactly where you left it.</p>
+      <button id="btn-resume" class="btn btn-primary">Continue my run</button>
+      <button id="btn-start-fresh" class="btn btn-secondary">Start fresh</button>
+    </section>
+    <section id="screen-lost-score" class="screen hidden">
+      <h2>⚠️ Score glitch</h2>
+      <p id="lost-score-prompt"></p>
+      <input id="lost-score-input" type="number" min="0" max="99" />
+      <button id="btn-lost-score-send" class="btn btn-primary">That's my score</button>
+    </section>
+
     <section id="screen-reveal" class="screen hidden">
       <p class="small">THE VAULT OPENS…</p>
       <div id="reveal-emoji" class="reveal-emoji"></div>
@@ -92,12 +105,20 @@
   <script src="js/core/profileMapper.js"></script>
   <script src="js/core/runPayload.js"></script>
   <script src="js/core/api.js"></script>
+  <script src="js/core/RunStateStore.js"></script>
+  <script src="js/core/LostScore.js"></script>
   <script src="data/forks.js"></script>
   <script src="data/profiles.js"></script>
+  <script src="data/wordVault.js"></script>
+  <script src="data/scramble.js"></script>
+  <script src="js/chambers/WordVault.js"></script>
+  <script src="js/chambers/Scramble.js"></script>
   <script src="js/games/patternBlitz.js"></script>
   <script src="js/games/colorCascade.js"></script>
   <script src="js/games/numberRush.js"></script>
   <script src="js/games/vaultDoor.js"></script>
+  <script src="js/games/wordVault.js"></script>
+  <script src="js/games/scramble.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

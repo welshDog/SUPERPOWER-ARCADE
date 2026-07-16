@@ -2,7 +2,7 @@
 (function () {
   const SPA = (window.SPA = {
     games: window.SPA?.games || {},
-    CHAMBERS: ['pattern-blitz', 'color-cascade', 'number-rush', 'vault-door'],
+    CHAMBERS: ['pattern-blitz', 'color-cascade', 'number-rush', 'word-vault', 'scramble', 'vault-door'],
     state: {}
   });
 
@@ -20,6 +20,9 @@
       dial: new DifficultyDial({ windowSize: 5, boredomThresholdMs: 600, frustrationThreshold: 3 }),
       dj: new DopamineDJ({ baseDropChance: 0.15, streakMultiplier: 0.05 }),
       particles: typeof ParticleSystem !== 'undefined' ? new ParticleSystem() : null,
+      store: new RunStateStore({ storage: window.localStorage }),
+      lostScore: null,
+      resumed: false,
       coins: 0,
       streak: 0,
       chamberIndex: 0,
@@ -105,7 +108,51 @@
 
   function afterChamber(index) {
     SPA.state.forkFlow.queueForChamber(index + 1);
+    persistRun(index);
+    if (SPA.CHAMBERS[index] === 'word-vault') return showLostScore(index);
     nextForkOrChamber(index);
+  }
+
+  function showLostScore(index) {
+    SPA.state.lostScore = new LostScore({ tracker: SPA.state.tracker });
+    const best = SPA.state.lostScore.best;
+    SPA.showScreen('screen-lost-score');
+    const gameNames = { 'pattern-blitz': 'Pattern Blitz', 'color-cascade': 'Color Cascade', 'number-rush': 'Number Rush', 'word-vault': 'the Word Vault' };
+    $('lost-score-prompt').textContent =
+      `The vault just corrupted one record — your best chamber, ${gameNames[best.game]}. How many did you get right in there? (Your word is the record now.)`;
+    $('btn-lost-score-send').onclick = () => {
+      const reported = parseInt($('lost-score-input').value, 10);
+      if (Number.isNaN(reported)) return;
+      const res = SPA.state.lostScore.report(reported);
+      if (res.needsRepair) queueRepairScene();
+      persistRun(index);
+      nextForkOrChamber(index);
+    };
+  }
+
+  function queueRepairScene() {
+    // Repair window (spec hard rule): unshift onto the fork queue so it fires at the
+    // very next scene transition — always before the Scramble chamber starts.
+    SPA.state.forkFlow.queue.unshift({
+      id: 'lost-score-repair',
+      prompt: 'The Keeper found a dusty backup of that record… want to double-check what you reported?',
+      options: [
+        { id: 'check', label: '📼 Check the backup', signal: '__repair_yes' },
+        { id: 'leave', label: '🚶 Leave it as reported', signal: '__repair_no' }
+      ]
+    });
+  }
+
+  function persistRun(index) {
+    SPA.state.store.save({
+      chamberIndex: index,
+      coins: SPA.state.coins,
+      streak: SPA.state.streak,
+      sceneQueue: SPA.state.forkFlow.queue.map((f) => f.id),
+      trackerJson: SPA.state.tracker.toJSON(),
+      lostScorePending: !!SPA.state.lostScore?.pendingRepair,
+      resumed: SPA.state.resumed
+    });
   }
 
   function nextForkOrChamber(index) {
@@ -128,9 +175,15 @@
       btn.textContent = opt.label;
       btn.addEventListener('click', () => {
         const res = SPA.state.forkFlow.choose(fork, opt.id);
+        if (res.signal === '__repair_yes' || res.signal === '__repair_no') {
+          SPA.state.lostScore.repair(res.signal === '__repair_yes');
+          persistRun(chamberIndex);
+          return nextForkOrChamber(chamberIndex);
+        }
         SPA.state.tracker.record('fork_choice', { forkId: fork.id, optionId: opt.id, signal: res.signal });
         if (res.grantsCoins) setCoins(SPA.state.coins + res.grantsCoins);
         if (res.costsCoins) setCoins(SPA.state.coins - res.costsCoins);
+        persistRun(chamberIndex);
         nextForkOrChamber(chamberIndex);
       });
       box.appendChild(btn);
@@ -139,6 +192,8 @@
 
   // ---- reveal + share ----
   function reveal() {
+    if (SPA.state.resumed) SPA.state.tracker.record('finished_after_resume', {});
+    SPA.state.store.clear();
     const profile = window.mapProfile(SPA.state.tracker.toJSON());
     SPA.state.profile = profile;
     SPA.showScreen('screen-reveal');
@@ -185,6 +240,7 @@
       ? "If your run lights up the board, you'll hear from a real human. Watch your inbox."
       : 'Your run stayed on this device, as promised. Come back any time.';
     localStorage.removeItem('spa_run');
+    localStorage.removeItem('spa_saved_run');
   }
 
   // ---- quest codes ----
@@ -217,6 +273,35 @@
     $('btn-share-send').addEventListener('click', sendRun);
     $('btn-share-skip').addEventListener('click', () => thanks(false));
     $('btn-again').addEventListener('click', () => location.reload());
-    SPA.showScreen('screen-landing');
+
+    const savedRun = new RunStateStore({ storage: window.localStorage }).load();
+    if (savedRun) {
+      SPA.showScreen('screen-resume');
+      $('btn-resume').addEventListener('click', () => {
+        newRunState();
+        SPA.state.tracker.restore(savedRun.trackerJson);
+        setCoins(savedRun.coins);
+        SPA.state.streak = savedRun.streak;
+        (savedRun.sceneQueue || []).forEach((id) => {
+          const fork = window.SPA_FORKS.find((f) => f.id === id);
+          if (fork) SPA.state.forkFlow.queue.push(fork);
+        });
+        if (savedRun.lostScorePending) {
+          SPA.state.lostScore = new LostScore({ tracker: SPA.state.tracker });
+          SPA.state.lostScore.pendingRepair = true;
+          queueRepairScene();
+        }
+        const { resumeGapMs } = SPA.state.store.markResumed();
+        SPA.state.resumed = true;
+        SPA.state.tracker.record('run_resumed', { resumeGapMs });
+        runChamber(savedRun.chamberIndex);
+      });
+      $('btn-start-fresh').addEventListener('click', () => {
+        new RunStateStore({ storage: window.localStorage }).clear();
+        SPA.showScreen('screen-landing');
+      });
+    } else {
+      SPA.showScreen('screen-landing');
+    }
   });
 })();

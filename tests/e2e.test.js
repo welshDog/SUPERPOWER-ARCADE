@@ -6,6 +6,8 @@
 
 import { strict as assert } from 'node:assert';
 import { describe, test, before } from 'node:test';
+import ForkFlow from '../js/core/ForkFlow.js';
+import SignalTracker from '../js/core/SignalTracker.js';
 
 // ── Stubs / test doubles ────────────────────────────────────────────────────
 
@@ -254,5 +256,23 @@ describe('E2E: DifficultyDial integration', () => {
     const dial = makeDial(2);
     dial.down(); dial.down(); dial.down();
     assert.equal(dial.level, 1);
+  });
+});
+
+describe('E2E: v2 flow integration (Lost Score repair window + resume)', () => {
+  test('repair scene is queued ahead of any pending forks (fires within the window)', () => {
+    const ff = new ForkFlow([{ id: 'later-fork', chamberAfter: 5, prompt: '', options: [] }]);
+    ff.queueForChamber(5);
+    ff.queue.unshift({ id: 'lost-score-repair', prompt: '', options: [] });
+    assert.equal(ff.next().id, 'lost-score-repair');
+  });
+
+  test('resume gap and finished_after_resume are separate tracker events', () => {
+    const t = new SignalTracker({});
+    t.startRun('med');
+    t.record('run_resumed', { resumeGapMs: 93600000 });
+    t.record('finished_after_resume', {});
+    assert.equal(t.count('run_resumed'), 1);
+    assert.equal(t.count('finished_after_resume'), 1);
   });
 });
