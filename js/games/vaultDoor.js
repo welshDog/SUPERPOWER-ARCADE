@@ -78,7 +78,7 @@
           ctx.feedback('VAULT OPENED', 'success');
           // Grant BROski$
           ctx.grantCoins(500); // 500 BROski$ for beating the boss
-          
+
           // Animate vault door opening
           isOpening = true;
           setTimeout(() => {
@@ -88,10 +88,31 @@
           ctx.feedback(res.nudge || 'ACCESS DENIED', 'warning');
           // Smooth camera shake setup
           cameraShake = 1.0;
+          // Same threshold the nudge text uses (attempts >= 5) so the
+          // "leave it for now" option appears exactly when the vault
+          // starts nudging the player.
+          if (res.nudge) {
+            abandonBtn.style.display = 'inline-block';
+          }
         }
       };
       uiLayer.appendChild(submitBtn);
-      
+
+      // Abandon path — hidden until the player has made a genuine run at
+      // it (mirrors VaultDoor.attempt()'s nudge threshold). Neutral tone:
+      // stepping back from an unwinnable-feeling puzzle isn't a failure.
+      const abandonBtn = document.createElement('button');
+      abandonBtn.className = 'btn btn-secondary';
+      abandonBtn.style.marginTop = '15px';
+      abandonBtn.style.pointerEvents = 'auto';
+      abandonBtn.style.display = 'none';
+      abandonBtn.textContent = 'Leave it for now';
+      abandonBtn.onclick = () => {
+        logic.abandon();
+        ctx.complete();
+      };
+      uiLayer.appendChild(abandonBtn);
+
       el.appendChild(uiLayer);
 
       // --- THREE.JS SETUP ---
@@ -110,6 +131,7 @@
       renderer.domElement.style.left = '0';
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
+      renderer.domElement.style.pointerEvents = 'none';
       el.appendChild(renderer.domElement);
 
       // Lighting
