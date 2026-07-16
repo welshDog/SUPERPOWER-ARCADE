@@ -39,6 +39,24 @@ The Keeper (you) sees an evidence-first dashboard. Players never see a diagnosis
 
 ---
 
+## v2 — The Deep Vault Update
+
+Three new moments deepen the joiner-test signal, plus save-and-resume so a run survives a closed tab:
+
+| Moment | What it does |
+|---|---|
+| **Word Vault** (dual-mode) | Verbal chamber offering Word or Symbol mode; the mode picked is itself a signal, alongside within-mode accuracy |
+| **Lost Score** (ethics test) | After the Word Vault, the player self-reports their score from memory; honest reports (±10%) pass silently, inflated reports trigger a one-time repair offer — never a penalty, never a public callout |
+| **The Scramble** | A chaos-to-plan chamber themed as a self-contained cue (no external hints); any picks let the player continue |
+
+**Save-and-resume:** progress is checkpointed to `localStorage` after every chamber, fork, and Lost Score report. Closing the tab and reopening shows a resume screen; continuing restores the DifficultyDial, DopamineDJ wallet/streak state, coin count, and any pending fork (e.g. a queued repair offer) exactly where the run left off, then advances to the next chamber rather than replaying the one already finished.
+
+**Schema drift fix carried in this branch:** `supabase/schema.sql` needs to be re-run against your Supabase project — the RPC the client calls was renamed (`validate_quest_code` → `redeem_quest_code`) and `shared_runs`/`quest_codes` gained columns (`player_name`, `contact`, `invitee_name`, `message`) to match what `js/core/api.js` actually sends. See the schema-drift fix commit for the full column/RPC diff. Existing deployments will see quest-code redemption and share submission fail with a schema-mismatch error until the updated `schema.sql` is applied.
+
+**Privacy promise, unchanged:** sharing is still consent-led — nothing leaves the device until the player taps send on the share screen ("Keep it to myself" sends nothing, ever). `js/core/api.js` remains the *only* file in `js/` or `data/` permitted to call `fetch`/`XMLHttpRequest`; this is enforced by an automated regression test (`tests/e2e.test.js`) that statically scans both trees on every test run.
+
+---
+
 ## Quick Start (local)
 
 ```bash
@@ -152,7 +170,7 @@ npm test
 | File | Coverage |
 |---|---|
 | `tests/chambers.test.js` | 12 tests across all 4 chambers |
-| `tests/e2e.test.js` | 14 tests: quest gate, PII guard, full run loop, Keeper read, DifficultyDial |
+| `tests/e2e.test.js` | quest gate, PII guard, full run loop, Keeper read, DifficultyDial, v2 flow integration (repair window + resume), chamber script-loading regression, network-isolation privacy regression |
 | `tests/agents.test.js` | DifficultyDial, DopamineDJ, ParticleSystem |
 | `tests/fork_flow.test.js` | ForkFlow + repair injection |
 | `tests/profile_mapper.test.js` | Archetype mapping + evidence notes |

@@ -404,3 +404,26 @@ describe('Regression: Chamber class script loading', () => {
     assert.ok(classNamesFromFiles.has('VaultDoor'), 'VaultDoor class not found in chamber files');
   });
 });
+
+test('no new module talks to the network — api.js stays the only fetch site', () => {
+  // Note: the task brief's snippet used CJS require()/__dirname; this file is ESM
+  // (see the fileURLToPath pattern above), so this reuses the module's existing
+  // node:fs/node:path imports and the same __dirname derivation already used
+  // by the "Regression: Chamber class script loading" test above.
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const offenders = [];
+  const scan = (dir) => {
+    for (const f of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, f.name);
+      if (f.isDirectory()) scan(p);
+      else if (f.name.endsWith('.js') && !p.includes('api.js')) {
+        const src = readFileSync(p, 'utf8');
+        if (/\bfetch\s*\(/.test(src) || /XMLHttpRequest/.test(src)) offenders.push(p);
+      }
+    }
+  };
+  scan(join(__dirname, '..', 'js'));
+  scan(join(__dirname, '..', 'data'));
+  assert.deepEqual(offenders, [], `network calls outside api.js: ${offenders.join(', ')}`);
+});
