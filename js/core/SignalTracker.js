@@ -15,6 +15,12 @@ class SignalTracker {
     this._persist();
   }
 
+  restore(json) {
+    this.meta = json?.meta || {};
+    this.events = Array.isArray(json?.events) ? json.events : [];
+    this._persist();
+  }
+
   record(type, detail = {}) {
     this.events.push({ type, detail, at: Date.now() });
     this._persist();
