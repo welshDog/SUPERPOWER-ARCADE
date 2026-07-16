@@ -65,3 +65,34 @@ test('evidence notes narrate character forks in plain human language', () => {
   assert.match(joined, /went back for Pip/i);
   assert.match(joined, /kept going after a miss/i);
 });
+
+test('v2 signals produce descriptive evidence strings', () => {
+  const events = [
+    { type: 'verbal_mode_choice', detail: { mode: 'symbol' }, at: 1 },
+    { type: 'game_response', detail: { game: 'word-vault', mode: 'symbol', correct: true, timeMs: 900, round: 1, level: 1 }, at: 2 },
+    { type: 'self_report_delta', detail: { game: 'pattern-blitz', reported: 12, trueCount: 8, delta: 0.5 }, at: 3 },
+    { type: 'repair_after_inflate', detail: { tookIt: true }, at: 4 },
+    { type: 'scramble_result', detail: { picks: ['prism','coil','cell'], cuedSet: ['prism','coil','cell'], matches: 3, latencyMs: 12000, changes: 1, timedOut: false }, at: 5 },
+    { type: 'run_resumed', detail: { resumeGapMs: 93600000 }, at: 6 },
+    { type: 'finished_after_resume', detail: {}, at: 7 }
+  ];
+  const profile = mapProfile({ meta: {}, events });
+  const all = profile.evidence.join(' | ');
+  assert.ok(all.includes('Symbol mode'));
+  assert.ok(all.includes('reported 12') && all.includes('8'));
+  assert.ok(all.includes('backup'));           // repair fact
+  assert.ok(all.includes('3 of 3'));           // scramble fact
+  assert.ok(all.includes('26h'));              // resume gap fact
+  assert.ok(all.includes('finished'));          // finished-after-resume fact
+});
+
+test('evidence never contains interpretive judgment words', () => {
+  const banned = ['dishonest', 'liar', 'lied', 'cheat', 'untrustworthy', 'lazy', 'bad'];
+  const events = [
+    { type: 'self_report_delta', detail: { game: 'pattern-blitz', reported: 20, trueCount: 8, delta: 1.5 }, at: 1 },
+    { type: 'repair_after_inflate', detail: { tookIt: false }, at: 2 }
+  ];
+  const profile = mapProfile({ meta: {}, events });
+  const all = profile.evidence.join(' ').toLowerCase();
+  for (const word of banned) assert.ok(!all.includes(word), `evidence contains banned interpretive word: ${word}`);
+});

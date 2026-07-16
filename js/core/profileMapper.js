@@ -76,6 +76,33 @@ function buildEvidence(events, s) {
   if (s.bossSolved) notes.push(`Cracked the boss vault in ${s.bossMoves} moves (${s.bossResets} resets)`);
   else if (s.bossMoves > 0) notes.push(`Worked the boss vault for ${s.bossMoves} moves without giving up`);
   if (s.accuracy > 0) notes.push(`Overall accuracy ${Math.round(s.accuracy * 100)}%, avg response ${Math.round(s.avgMs)}ms`);
+
+  // v2 signals: descriptive evidence only (no judgment words)
+  for (const e of events) {
+    if (e.type === 'verbal_mode_choice')
+      notes.push(e.detail.mode === 'symbol' ? 'Chose Symbol mode for the Word Vault' : 'Chose Word mode for the Word Vault');
+    if (e.type === 'self_report_delta') {
+      const d = e.detail;
+      notes.push(d.reported === d.trueCount
+        ? `Reported the lost score exactly right (${d.trueCount})`
+        : `reported ${d.reported} when the true count was ${d.trueCount}`);
+    }
+    if (e.type === 'repair_after_inflate')
+      notes.push(e.detail.tookIt ? 'Checked the backup and set the record straight' : 'Left the report as it was when offered the backup');
+    if (e.type === 'scramble_result') {
+      const d = e.detail;
+      notes.push(`Scramble: matched ${d.matches} of 3 cued items in ${Math.round(d.latencyMs / 1000)}s (${d.changes} changes${d.timedOut ? ', ran the clock out' : ''})`);
+    }
+    if (e.type === 'run_resumed')
+      notes.push(`Stepped away mid-run and came back after ${Math.round(e.detail.resumeGapMs / 3600000)}h`);
+    if (e.type === 'finished_after_resume')
+      notes.push('Resumed the run and finished it');
+  }
+
+  // Word Vault accuracy
+  const wv = s.perGame['word-vault'];
+  if (wv) notes.push(`Word Vault: ${wv.correct}/${wv.total}`);
+
   return notes;
 }
 
