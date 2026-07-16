@@ -6,6 +6,9 @@
 
 import { strict as assert } from 'node:assert';
 import { describe, test, before } from 'node:test';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import ForkFlow from '../js/core/ForkFlow.js';
 import SignalTracker from '../js/core/SignalTracker.js';
 import RunStateStore from '../js/core/RunStateStore.js';
@@ -351,5 +354,53 @@ describe('E2E: v2 flow integration (Lost Score repair window + resume)', () => {
     assert.deepEqual(freshDj.state, dj.state);
     assert.equal(freshDj.getWalletBalance(), 7);
     assert.equal(freshDj.getSessionEarnings(), 7);
+  });
+});
+
+describe('Regression: Chamber class script loading', () => {
+  test('all chamber classes that export to window are loaded in index.html', () => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = join(__filename, '..');
+    const projectRoot = join(__dirname, '..');
+    const chambersDir = join(projectRoot, 'js', 'chambers');
+    const indexPath = join(projectRoot, 'index.html');
+
+    // Read all chamber files
+    const chamberFiles = readdirSync(chambersDir).filter(f => f.endsWith('.js'));
+
+    // Extract class names from dual-export pattern (e.g. "window.PatternBlitz = PatternBlitz;")
+    const classNamesFromFiles = new Set();
+    for (const file of chamberFiles) {
+      const content = readFileSync(join(chambersDir, file), 'utf8');
+      // Match pattern: window.ClassName = ClassName;
+      const match = content.match(/window\.(\w+)\s*=\s*\1;/);
+      if (match) {
+        classNamesFromFiles.add(match[1]);
+      }
+    }
+
+    // Read index.html and extract script src attributes for chamber files
+    const indexHtml = readFileSync(indexPath, 'utf8');
+    const scriptTags = indexHtml.match(/<script\s+src="js\/chambers\/(.+?)\.js"><\/script>/g) || [];
+    const loadedFiles = new Set(
+      scriptTags.map(tag => {
+        const match = tag.match(/js\/chambers\/(.+?)\.js/);
+        return match ? match[1] : null;
+      }).filter(Boolean)
+    );
+
+    // Verify each class from files is loaded via script tag
+    for (const className of classNamesFromFiles) {
+      assert.ok(
+        loadedFiles.has(className),
+        `Chamber class ${className} (from js/chambers/${className}.js) is not loaded in index.html — add: <script src="js/chambers/${className}.js"><\/script>`
+      );
+    }
+
+    // Sanity check: we should have found at least the original 4 v1 chambers
+    assert.ok(classNamesFromFiles.has('PatternBlitz'), 'PatternBlitz class not found in chamber files');
+    assert.ok(classNamesFromFiles.has('ColorCascade'), 'ColorCascade class not found in chamber files');
+    assert.ok(classNamesFromFiles.has('NumberRush'), 'NumberRush class not found in chamber files');
+    assert.ok(classNamesFromFiles.has('VaultDoor'), 'VaultDoor class not found in chamber files');
   });
 });
