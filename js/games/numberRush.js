@@ -14,7 +14,7 @@
       const logic = new window.NumberRush({ 
         tracker: window.SPA.state.tracker,
         dial: window.SPA.state.dial,
-        dj: window.SPA.state.dj
+      dj: window.SPA.state.dj
       });
       
       const container = document.createElement('div');
