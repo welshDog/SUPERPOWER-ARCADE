@@ -29,7 +29,7 @@ class LostScore {
   report(reported) {
     this.reported = reported;
     const trueCount = this.best.correctCount;
-    const delta = trueCount > 0 ? (reported - trueCount) / trueCount : 0;
+    const delta = trueCount > 0 ? (reported - trueCount) / trueCount : (reported > 0 ? 1 : 0);
     const honest = delta <= 0.10; // under-reporting is never dishonest
     this.pendingRepair = !honest;
     this.tracker.record('self_report_delta', { game: this.best.game, reported, trueCount, delta: Number(delta.toFixed(3)) });

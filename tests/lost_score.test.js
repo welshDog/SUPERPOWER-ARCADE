@@ -48,3 +48,17 @@ test('under-reporting is honest-side (never triggers repair)', () => {
   const res = ls.report(6); // modest / forgot — not inflation
   assert.equal(res.needsRepair, false);
 });
+
+test('zero true score: nonzero report is full inflation, zero report stays honest', () => {
+  const t = trackerWith({ 'pattern-blitz': [false, false] }); // 0 correct
+  const lsLie = new LostScore({ tracker: t });
+  const resLie = lsLie.report(5); // claims 5 correct when true count is 0
+  assert.equal(resLie.honest, false);
+  assert.equal(resLie.needsRepair, true);
+
+  const t2 = trackerWith({ 'pattern-blitz': [false, false] });
+  const lsHonest = new LostScore({ tracker: t2 });
+  const resHonest = lsHonest.report(0); // correctly reports nothing happened
+  assert.equal(resHonest.honest, true);
+  assert.equal(resHonest.needsRepair, false);
+});
