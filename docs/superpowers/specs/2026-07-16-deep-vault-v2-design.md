@@ -33,27 +33,30 @@ The game remains Round 1 (the filter). Lyndz interviewing people his way remains
 
 - Triggered once per run, immediately after the player's **best-scoring** chamber: the game "glitches" and claims the score was lost, then asks the player to re-enter what they scored.
 - The true score is retained locally the whole time. Nothing is actually lost.
-- **Signals:** `self_report_delta` (reported − true). Reports within ±10% of the true score count as honest (good-faith memory error). Inflation beyond +10% → later in the run, one low-key repair chance in v1's established style: the Keeper "finds a backup" and offers to double-check the report → `repair_after_inflate` (took it / didn't).
+- **Signals:** `self_report_delta` (reported − true). Reports within ±10% of the true score count as honest (good-faith memory error). Inflation beyond +10% → one low-key repair chance in v1's established style: the Keeper "finds a backup" and offers to double-check the report → `repair_after_inflate` (took it / didn't).
+- **Repair-window timing (hard rule for code + tests):** the repair offer fires within the next 1–2 scenes after the Lost Score — at the next scene transition where it fits naturally, and no later than the Scramble entry. Deterministic, not random.
 - Consistent with v1 §5: nobody is judged on one bad choice; the repair moment is the better character test. Both facts land in the dashboard as raw behaviour; no in-game punishment or reward difference either way (lying must stay *free and profitable* in-game or the test measures nothing).
 
 ### 2c. The Scramble — chaos-to-plan gate
 
 - Placed immediately before the Boss Chamber: a deliberately messy inventory screen (~9–12 items, visual clutter), 30-second timer, instruction-light prompt: pick 3 to take into the boss.
-- There **is** a discoverable logic connecting 3 items to the boss chamber (subtle visual/thematic cues seeded earlier in the run) — but any 3 picks let the run continue; the boss plays out slightly differently, never unwinnably.
+- There **is** a discoverable logic connecting 3 items to the boss chamber — but any 3 picks let the run continue; the boss plays out slightly differently, never unwinnably.
+- **Clueing hard rule:** the cued logic must be fully discoverable from what's visible on the Scramble screen itself (item appearance/theming matched against a boss-door preview shown alongside the inventory). Earlier-run reinforcement is allowed as flavour, but solving must **never** depend on recalling one small earlier detail — we measure prioritisation under pressure, not memory luck.
 - **Signals:** `scramble_picks` (which items, vs. the cued set), `scramble_latency` (time to first commit), dither pattern (picks changed before confirm).
 
 ## 3. Run structure — one ~15 min run, save-and-resume
 
 Landing → energy check-in → 3 v1 chambers (with existing forks) → **Word Vault** → **Lost Score** (fires after best chamber, so its slot floats) → **The Scramble** → Boss Chamber → Reveal → Share tap.
 
-- **Save-and-resume:** full run state (chamber progress, signals, fork history) persists in localStorage. Leaving mid-run loses nothing; returning resumes exactly where they left off.
-- **Resume as signal, not failure:** `resume_gap` records time away when a run is resumed ("came back after 26h and finished" = follow-through evidence). Abandoned runs that never resume simply die on the device like any unshared run — zero rows, zero judgment.
+- **Save-and-resume:** full run state (chamber progress, signals, fork history) persists in client-side storage on the device (localStorage in v2's implementation — the spec requirement is "client-side persisted run state", so the mechanism may change later without a spec change). Leaving mid-run loses nothing; returning resumes exactly where they left off.
+- **Resume as signal, not failure — two separate facts:** `resume_gap` records time away when a run is resumed, and `finished_after_resume` records whether that resumed run actually reached the reveal. Time-away and follow-through are different reliability signals and are tracked (and shown on the dashboard) separately — this split also feeds the future v4 trial tracker. Abandoned runs that never resume simply die on the device like any unshared run — zero rows, zero judgment.
 
 ## 4. Signals, archetypes, dashboard
 
-- **`SignalTracker` additions:** `verbal_mode_choice`, `verbal_accuracy`, `self_report_delta`, `repair_after_inflate`, `scramble_picks`, `scramble_latency`, `resume_gap`.
+- **`SignalTracker` additions:** `verbal_mode_choice`, `verbal_accuracy`, `self_report_delta`, `repair_after_inflate`, `scramble_picks`, `scramble_latency`, `resume_gap`, `finished_after_resume`.
 - **Archetypes:** the same 5 (⚡ Hyperfocus Hunter, 🔍 Pattern Detective, 🎨 Chaos Creator, 🧩 Systems Architect, 🌀 Wild Card). New signals enrich the mapper's inputs and reveal blurbs; no new archetypes, no renames.
-- **Dashboard (evidence-first, unchanged philosophy):** new raw-fact rows per run — e.g. "reported lost score honestly", "inflated by 40%, then corrected when offered the backup", "symbol mode, 8/10", "Scramble: cued 3-of-3 in 12s", "resumed after a day and finished". Facts first, archetype below. Lyndz judges character; no algorithmic verdicts, no composite "trust score".
+- **Dashboard (evidence-first, unchanged philosophy):** new raw-fact rows per run — e.g. "reported 480 when true score was 320, then corrected when offered the backup", "symbol mode, 8/10", "Scramble: cued 3-of-3 in 12s", "away 26h", "finished after resume". Facts first, archetype below. Lyndz judges character; no algorithmic verdicts, no composite "trust score".
+- **HARD RULE — descriptive, never interpretive:** every dashboard fact states what happened ("reported 480, true score 320"), never a character judgment ("dishonest"). And no single signal — the Lost Score especially — is ever presented as a solo verdict; some players will treat score inflation as playful cheating, so it stays one clue among several for Lyndz's Round-2 judgment.
 - **`shared_runs` schema:** extended with the new signal fields (additive columns only; v1 rows remain valid).
 
 ## 5. Not in v2
@@ -66,7 +69,9 @@ Extend the existing suites (`tests/chambers.test.js`, `tests/e2e.test.js`):
 - Word Vault: both modes complete a round loop; mode choice + accuracy recorded; matched item counts.
 - Lost Score: true score retained; delta computed correctly for honest/inflated reports; repair offer fires only after out-of-band inflation; `repair_after_inflate` recorded both ways.
 - Scramble: timer expiry auto-continues; picks + latency recorded; boss reachable with any pick set.
-- Save-and-resume: mid-run state survives reload; `resume_gap` recorded on resume; a resumed run completes normally.
+- Save-and-resume: mid-run state survives reload; `resume_gap` recorded on resume; a resumed run completes normally and sets `finished_after_resume`.
+- Lost Score repair-window: offer fires within 1–2 scenes after the report, never later than Scramble entry.
+- Scramble clueing: the cued set is derivable from the Scramble screen alone (test asserts the cue data lives in the screen's own payload, not in earlier-run state).
 - Privacy regression: the sacred check — a full v2 run with **no share tap leaves zero rows in Supabase** — must still pass.
 
 ## 7. Definition of done (v2)
