@@ -427,3 +427,16 @@ test('no new module talks to the network — api.js stays the only fetch site', 
   scan(join(__dirname, '..', 'data'));
   assert.deepEqual(offenders, [], `network calls outside api.js: ${offenders.join(', ')}`);
 });
+
+test('sendRun includes the player\'s actual coin count in the share payload', () => {
+  // app.js is browser-only (window/document, no DOM shim in this zero-dep test
+  // setup), so this is a structural check on the buildRunPayload call site
+  // rather than an executed unit test.
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const src = readFileSync(join(__dirname, '..', 'app.js'), 'utf8');
+  const match = src.match(/async function sendRun\s*\([^)]*\)\s*\{[\s\S]*?\n  \}/);
+  assert.ok(match, 'sendRun function not found in app.js');
+  assert.match(match[0], /broskiCoins\s*:\s*SPA\.state\.coins/,
+    'sendRun must pass broskiCoins: SPA.state.coins into buildRunPayload, or shared runs always report 0 coins');
+});

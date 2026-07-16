@@ -222,7 +222,8 @@
         profile: SPA.state.profile,
         name: $('share-name').value,
         contact: $('share-contact').value,
-        questCode: SPA.state.quest?.code || ''
+        questCode: SPA.state.quest?.code || '',
+        broskiCoins: SPA.state.coins
       });
       btn.disabled = true;
       const res = await window.SPA_API.submitRun(payload, window.SPA_CONFIG);
