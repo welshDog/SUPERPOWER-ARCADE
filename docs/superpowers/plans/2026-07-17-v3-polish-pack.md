@@ -992,6 +992,8 @@ git commit -m "feat: wire arcade sound — mute HUD toggle, gesture unlock, tone
 
 ### Task 8: Chamber interstitials — meta module + skippable card
 
+> **✅ DONE 2026-07-17** (commit 6a1498c): TDD red→green. Browser-verified: card before chamber 1, ~1s auto-advance, instant click-skip. reduced-motion path unit/CSS-covered.
+
 **Files:**
 - Create: `js/core/InterstitialCard.js`
 - Modify: `index.html` (screen + script tag), `style.css`, `app.js`
@@ -1131,6 +1133,8 @@ git commit -m "feat: skippable chamber interstitial cards — pacing beat betwee
 ---
 
 ### Task 9: Wallet — unified coin/streak core module
+
+> **✅ DONE 2026-07-17** (commit 37a019f): TDD red→green, 3 tests. NOTE: module ships dormant — nothing consumes it until Task 10's wiring. Suite baseline: **100** green.
 
 **Files:**
 - Create: `js/core/Wallet.js`
