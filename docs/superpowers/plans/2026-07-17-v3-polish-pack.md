@@ -731,6 +731,8 @@ git commit -m "feat: cinematic entrance hero — staggered boot typography + amb
 
 ### Task 6: SoundEngine — specs + engine with injectable AudioContext
 
+> **✅ DONE 2026-07-17** (commit 3ce33a1): TDD red→green, 4 tests in `tests/sound_engine.test.js`; the stray `osc.connect(g).connect ? …` line was omitted per this task's own correction note.
+
 **Files:**
 - Create: `js/systems/SoundEngine.js`
 - Test: `tests/sound_engine.test.js` (create)
@@ -915,6 +917,8 @@ git commit -m "feat: SoundEngine — synthesized Web Audio arcade tones, injecta
 ---
 
 ### Task 7: Sound wiring — mute button, unlock, game moments
+
+> **✅ DONE 2026-07-17** (commit feca67c). `reward.type === 'gold'` verified against DopamineDJ before wiring. Browser-verified: locked→unlocked AudioContext on INSERT COIN (state "running"), mute toggle + localStorage persistence across reload, live round with zero console errors. Suite baseline: **95** green.
 
 **Files:**
 - Modify: `index.html` (HUD mute button + script tag), `style.css` (mute button style), `app.js` (engine instance + play calls), `js/games/vaultDoor.js` (one line)
