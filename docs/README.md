@@ -16,7 +16,7 @@ A spec doesn't always get a matching plan (an idea can be written up for later w
 | 2026-07-13 | [`superpower-arcade-design.md`](superpowers/specs/2026-07-13-superpower-arcade-design.md) | [`superpower-arcade-v1.md`](superpowers/plans/2026-07-13-superpower-arcade-v1.md) | Shipped — v1 (4 original chambers + boss) |
 | 2026-07-16 | [`deep-vault-v2-design.md`](superpowers/specs/2026-07-16-deep-vault-v2-design.md) | [`deep-vault-v2.md`](superpowers/plans/2026-07-16-deep-vault-v2.md) | Shipped — v2 (Word Vault, Lost Score, The Scramble, save/resume) |
 | 2026-07-16 | [`cinematic-entrance-hero-idea.md`](superpowers/specs/2026-07-16-cinematic-entrance-hero-idea.md) | — | Folded into v3 (below) by reference |
-| 2026-07-17 | [`v3-polish-pack-design.md`](superpowers/specs/2026-07-17-v3-polish-pack-design.md) | — | Approved, awaiting implementation plan — 4 verified repairs + entrance hero + native-audio sound + transitions + unified wallet/momentum HUD |
+| 2026-07-17 | [`v3-polish-pack-design.md`](superpowers/specs/2026-07-17-v3-polish-pack-design.md) | [`v3-polish-pack.md`](superpowers/plans/2026-07-17-v3-polish-pack.md) | Shipped — v3 (4 repairs + entrance hero + native-audio sound + interstitials + unified wallet/momentum HUD) |
 
 ## Conventions
 

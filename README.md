@@ -65,6 +65,20 @@ Three new moments deepen the joiner-test signal, plus save-and-resume so a run s
 
 ---
 
+## v3 — The Polish Pack
+
+No new chambers — v3 makes the existing six feel premium and repairs four defects:
+
+| Change | What it does |
+|---|---|
+| **Zero third-party requests** | three.js vendored locally; dead Howler/ethers/supabase-js CDN tags removed — enforced by a regression test |
+| **Real OpenDyslexic** | the Word Vault font toggle now loads the actual (self-hosted, OFL) font |
+| **Keeper dashboard rebuilt** | the truncated admin/dashboard.js is whole again — login, evidence cards, ND-friendly invite drafting; access is local-only by design |
+| **Entrance boot sequence** | staggered wordmark + ambient particle field; INSERT COIN never gated; skipped on resume and under reduced-motion |
+| **Sound** | synthesized Web Audio chips (no libraries, no samples) — answers, coins (pitch rises with streak), forks, chamber resolves, boss swell; mute persists; defaults muted for reduced-motion users |
+| **Interstitials** | ~1s skippable chamber-name cards between chambers |
+| **Unified wallet + momentum** | one coin/streak source of truth; 🔥 streak meter + coin pulse in the HUD; back-compatible with pre-v3 saves |
+
 ## Quick Start (local)
 
 There's no build step and no npm dependencies — `package.json` only defines the test script. Everything runs as-is.
@@ -191,6 +205,11 @@ npm test
 | `tests/run_payload.test.js` | Payload builder, including `shared_runs` column-parity check against `supabase/schema.sql` |
 | `tests/signal_tracker.test.js` | SignalTracker event log |
 | `tests/api.test.js` | Supabase REST client (injectable fetch) |
+| `tests/dashboard_repair.test.js` | Keeper dashboard structural locks: closure shape, esc()/XSS escaping, markup repairs |
+| `tests/hero_boot_timeline.test.js` | Boot-stage order, settle budget, reduced-motion collapse |
+| `tests/sound_engine.test.js` | Tone specs (duration/gain ceilings), unlock+mute gating, persisted mute, semitone pitch-step |
+| `tests/interstitial_card.test.js` | Chamber card meta, unknown-id fallback, ~1s duration bound |
+| `tests/wallet.test.js` | Coin clamp/spend, streak grow/reset, JSON round-trip incl. legacy saves |
 
 ---
 
@@ -208,11 +227,15 @@ SUPERPOWER-ARCADE/
 │   ├── chambers/       # Pure game logic: PatternBlitz, ColorCascade, NumberRush, WordVault,
 │   │                   #   Scramble, VaultDoor — no DOM, unit-testable
 │   ├── core/           # SignalTracker, ForkFlow, RunStateStore, LostScore, profileMapper,
-│   │                   #   runPayload, api.js (the ONLY file allowed to fetch/XHR)
+│   │                   #   runPayload, HeroBootTimeline, InterstitialCard, Wallet,
+│   │                   #   api.js (the ONLY file allowed to fetch/XHR)
 │   ├── games/          # DOM/canvas mount adapters, one per chamber (js/chambers/X.js ↔ js/games/x.js)
-│   ├── systems/        # ParticleSystem (confetti/coin-burst FX); BROskiWallet (on-chain
-│   │                   #   BROski$ minting scaffold — loaded but not yet wired into any flow)
+│   ├── systems/        # ParticleSystem (burst FX), HeroField (ambient entrance particles),
+│   │                   #   SoundEngine (Web Audio chips); BROskiWallet (dormant web3 scaffold,
+│   │                   #   NOT loaded by index.html — see the header note in that file)
 │   └── config.js       # Committed client config: Supabase URL + anon key (see Environment Config)
+├── fonts/              # Self-hosted OpenDyslexic woff2 (OFL) — keeps the zero-third-party promise
+├── vendor/             # Vendored three.js r128 (vaultDoor's 3D vault) — no CDN scripts anywhere
 ├── supabase/
 │   └── schema.sql      # Full DB schema + RLS + RPC (apply by hand — see Supabase Setup)
 ├── tests/              # All test files (node:test, zero dependencies)
