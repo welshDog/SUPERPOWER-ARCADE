@@ -26,7 +26,7 @@ body {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
 }
 #particle-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
-#app { width: min(680px, 94vw); padding: 24px; text-align: center; }
+#app { width: min(680px, 94vw); padding: 24px; text-align: center; position: relative; z-index: 11; }
 .screen { animation: fadein .4s ease; }
 .hidden { display: none !important; }
 @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
@@ -97,3 +97,16 @@ h2 { font-size: clamp(1.3rem, 5vw, 2rem); margin-bottom: 16px; }
 .vault-reset { font-size: 1.6rem; background: none; border: none; cursor: pointer; opacity: .5; }
 .vault-reset:hover { opacity: 1; }
 .font-od, .font-od * { font-family: 'OpenDyslexic', 'Comic Sans MS', 'Segoe UI', system-ui, sans-serif !important; letter-spacing: .02em; }
+/* ── v3 entrance hero (spec §3a) ── */
+@keyframes bootWordIn { from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
+                        to   { opacity: 1; transform: none; filter: none; } }
+@keyframes bootFadeUp { from { opacity: 0; transform: translateY(10px); }
+                        to   { opacity: 1; transform: none; } }
+body.boot-playing .boot-word        { opacity: 0; animation: bootWordIn 0.6s ease forwards; }
+body.boot-playing .tagline          { opacity: 0; animation: bootFadeUp 0.45s ease forwards; }
+body.boot-playing .boot-actions > * { opacity: 0; animation: bootFadeUp 0.35s ease forwards; }
+@media (prefers-reduced-motion: reduce) {
+  body.boot-playing .boot-word, body.boot-playing .tagline, body.boot-playing .boot-actions > * {
+    animation-duration: 0.01s !important; animation-delay: 0s !important;
+  }
+}

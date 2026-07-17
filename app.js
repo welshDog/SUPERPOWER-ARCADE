@@ -8,6 +8,30 @@
 
   const $ = (id) => document.getElementById(id);
 
+  let heroField = null;
+
+  function enterLandingWithBoot() {
+    SPA.showScreen('screen-landing');
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const T = window.HeroBootTimeline;
+    const stages = T.applyReducedMotion(T.HERO_BOOT_STAGES, reduced);
+    const targets = [
+      ...document.querySelectorAll('#screen-landing .boot-word'),
+      document.querySelector('#screen-landing .tagline'),
+      ...document.querySelectorAll('#screen-landing .boot-actions > *')
+    ];
+    targets.forEach((el, i) => {
+      const s = stages[i] || stages[stages.length - 1];
+      el.style.animationDelay = `${s.delayMs}ms`;
+      el.style.animationDuration = `${s.durationMs || 10}ms`;
+    });
+    document.body.classList.add('boot-playing');
+    if (!reduced && window.HeroField) {
+      heroField = heroField || new HeroField({ canvas: $('particle-canvas') });
+      heroField.start();
+    }
+  }
+
   SPA.showScreen = function (id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.add('hidden'));
     $(id).classList.remove('hidden');
@@ -263,7 +287,11 @@
 
   // ---- wiring ----
   document.addEventListener('DOMContentLoaded', () => {
-    $('btn-enter').addEventListener('click', () => SPA.showScreen('screen-energy'));
+    $('btn-enter').addEventListener('click', () => {
+      heroField?.stop();
+      document.body.classList.remove('boot-playing');
+      SPA.showScreen('screen-energy');
+    });
     $('btn-quest-code').addEventListener('click', () => $('quest-entry').classList.toggle('hidden'));
     $('btn-quest-go').addEventListener('click', tryQuestCode);
     document.querySelectorAll('.btn-energy').forEach((b) =>
@@ -309,10 +337,10 @@
       });
       $('btn-start-fresh').addEventListener('click', () => {
         new RunStateStore({ storage: window.localStorage }).clear();
-        SPA.showScreen('screen-landing');
+        enterLandingWithBoot();
       });
     } else {
-      SPA.showScreen('screen-landing');
+      enterLandingWithBoot();
     }
   });
 })();

@@ -11,10 +11,12 @@
   <main id="app">
 
     <section id="screen-landing" class="screen">
-      <h1 class="glow">SUPERPOWER<br>ARCADE</h1>
+      <h1 class="glow"><span class="boot-word">SUPERPOWER</span><br><span class="boot-word">ARCADE</span></h1>
       <p class="tagline">The Arcade Keeper has opened the vault.<br>Find your superpower.</p>
-      <button id="btn-enter" class="btn btn-primary">INSERT COIN ▶</button>
-      <button id="btn-quest-code" class="btn btn-ghost">🔑 Got a key from a friend?</button>
+      <div class="boot-actions">
+        <button id="btn-enter" class="btn btn-primary">INSERT COIN ▶</button>
+        <button id="btn-quest-code" class="btn btn-ghost">🔑 Got a key from a friend?</button>
+      </div>
       <div id="quest-entry" class="hidden">
         <input id="quest-input" class="input" placeholder="ENTER-CODE" autocomplete="off" maxlength="24">
         <button id="btn-quest-go" class="btn btn-secondary">Unlock</button>
@@ -96,6 +98,7 @@
   <script src="js/agents/DifficultyDial.js"></script>
   <script src="js/agents/DopamineDJ.js"></script>
   <script src="js/systems/ParticleSystem.js"></script>
+  <script src="js/systems/HeroField.js"></script>
   <script src="js/core/SignalTracker.js"></script>
   <script src="js/core/ForkFlow.js"></script>
   <script src="js/core/profileMapper.js"></script>
@@ -103,6 +106,7 @@
   <script src="js/core/api.js"></script>
   <script src="js/core/RunStateStore.js"></script>
   <script src="js/core/LostScore.js"></script>
+  <script src="js/core/HeroBootTimeline.js"></script>
   <script src="data/forks.js"></script>
   <script src="data/profiles.js"></script>
   <script src="data/wordVault.js"></script>
