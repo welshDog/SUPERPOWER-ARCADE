@@ -27,11 +27,13 @@ class NumberRush {
       answer = start + step * 4;
       hint = '+' + step + ' each time';
     } else if (type === 'skip') {
-      const start = Math.floor(Math.random() * 5) + 2;
-      const mult  = 2 + Math.floor(level / 3);
-      seq = [start, start*mult, start*mult*2, start*mult*3];
-      answer = start * mult * 4;
-      hint = 'multiply pattern';
+      // Skip-counting: multiples of a base (2,4,6,8 … / 3,6,9,12 …). A clean
+      // constant-difference rule — the previous formula built 3,6,12,18 which
+      // is neither arithmetic nor geometric, i.e. unsolvable.
+      const base = Math.floor(Math.random() * 4) + 2 + Math.floor(level / 3);
+      seq = [base, base * 2, base * 3, base * 4];
+      answer = base * 5;
+      hint = 'counting by ' + base;
     } else if (type === 'fibonacci') {
       const a = Math.floor(Math.random() * 5) + 1;
       const b = Math.floor(Math.random() * 5) + 2;

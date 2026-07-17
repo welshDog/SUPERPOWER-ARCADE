@@ -507,3 +507,11 @@ test('answers are logged once — app.js does not double-record game_response', 
   assert.ok(!app.includes('game_response'),
     'app.js must not record game_response — the chamber logic records it once. A duplicate in ctx.onRound doubles every answer, inflating profileMapper retries/volume scoring and LostScore true-counts.');
 });
+
+test('NumberRush displays the full sequence — no hidden term before the "?"', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const src = readFileSync(join(__dirname, '..', 'js', 'games', 'numberRush.js'), 'utf8');
+  assert.ok(!/sequence\.slice\(0,\s*3\)/.test(src),
+    'numberRush.js must not slice the 4-term sequence to 3 — it hides a term, so "2, 3, 4, ?" demands 6 (the term after a hidden 5) instead of 5');
+});

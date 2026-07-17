@@ -167,3 +167,27 @@ test('VaultDoor: solved combo reports all four aligned', () => {
   assert.equal(res.aligned, 4);
   assert.equal(res.correct, true);
 });
+
+test('NumberRush: every puzzle is solvable — answer continues one consistent rule over the FULL sequence', () => {
+  for (const level of [1, 2, 3, 4, 6, 8]) {
+    for (let i = 0; i < 150; i++) {
+      const nr = new NumberRush({ tracker: makeTracker(), dial: makeDial(level), dj: makeDJ() });
+      const st = nr.nextRound();
+      const p = nr._current.puzzle;
+      const full = [...st.sequence, p.answer];
+      assert.ok(st.choices.includes(p.answer), `answer ${p.answer} missing from choices [${st.choices}]`);
+      if (p.type === 'arithmetic' || p.type === 'skip') {
+        const step = full[1] - full[0];
+        for (let k = 1; k < full.length; k++)
+          assert.equal(full[k] - full[k - 1], step, `${p.type} not constant-difference: [${full}]`);
+      } else if (p.type === 'multiply') {
+        const ratio = full[1] / full[0];
+        for (let k = 1; k < full.length; k++)
+          assert.equal(full[k], full[k - 1] * ratio, `multiply not constant-ratio: [${full}]`);
+      } else if (p.type === 'fibonacci') {
+        for (let k = 2; k < full.length; k++)
+          assert.equal(full[k], full[k - 1] + full[k - 2], `fibonacci broken: [${full}]`);
+      }
+    }
+  }
+});

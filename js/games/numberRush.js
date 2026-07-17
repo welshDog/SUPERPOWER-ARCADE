@@ -65,7 +65,7 @@
         if (!state) return ctx.complete();
         
         roundDisplay.textContent = `Round ${state.round} / ${state.total}`;
-        sequenceDisplay.textContent = state.sequence.slice(0, 3).join(', ') + ', ?';
+        sequenceDisplay.textContent = state.sequence.join(', ') + ', ?';
         hintDisplay.textContent = state.hint ? `Hint: ${state.hint}` : '';
         
         choicesContainer.innerHTML = '';
