@@ -27,29 +27,29 @@ v3 is deliberately **not a content expansion**. The six existing chambers are th
 
 All four were verified against the live repo/deployment on 2026-07-17.
 
-### 2a. Remove the dead Howler CDN script
+### 2a. Remove the dead Howler CDN script — ✅ DONE 2026-07-17 (went further: ALL CDN tags purged — howler/ethers/supabase-js deleted, three.js vendored to `vendor/three.min.js` — locked by a zero-external-scripts test in `tests/e2e.test.js`)
 
 `index.html:95` loads Howler 2.2.4 from cdnjs. **Zero code anywhere uses it** — the game is completely silent. It's a wasted third-party request on every page load, a render-delay risk, and a quiet contradiction of the README's "no third-party scripts" privacy stance.
 
 **Fix:** delete the script tag. Sound arrives in §3b via the native Web Audio API — Howler does not come back.
 
-### 2b. Make the OpenDyslexic toggle real
+### 2b. Make the OpenDyslexic toggle real — ✅ DONE 2026-07-17 (woff2 self-hosted under `fonts/`, @font-face with `font-display: swap`, browser-verified via `document.fonts.check`; locked by test in `tests/e2e.test.js`)
 
 `style.css:77`'s `.font-od` rule names `'OpenDyslexic'`, but **no `@font-face` ever loads the font** — toggling it currently gives players Comic Sans MS (the first fallback). The button in the Word Vault does something, but not what it says. For a game whose whole point includes dyslexia-fair testing, a fake accessibility control is a trust wound.
 
 **Fix:** self-host the OpenDyslexic woff2 files (OFL-licensed) under a new `fonts/` directory and add the `@font-face` rules with `font-display: swap`. Self-hosting keeps the zero-third-party-request promise (no Google-Fonts-style CDN). Verify the toggle visibly changes glyph shapes, not just letter-spacing.
 
-### 2c. Unblock the Keeper: document local-only admin access
+### 2c. Unblock the Keeper: document local-only admin access — ✅ DONE 2026-07-17 (README Admin + Ethics sections updated per the fix below)
 
 Live check: `https://superpower-arcade.vercel.app/admin/` returns **404 for everyone, including the Keeper** — the `vercel.json` route rule has no bypass, so the production dashboard is unreachable, full stop.
 
 **Fix (decision made):** keep prod `/admin/*` blocked, and make local-only access the documented, supported path — `npx serve .` → `localhost:.../admin/dashboard.html`, which works because the dashboard is a static page that talks straight to Supabase with the runtime-entered service key. Real auth would need server-side middleware this architecture doesn't have; a half-secure workaround (secret query param, obscure path) would be worse than an honest "run it locally." Update README's Admin section accordingly.
 
-### 2d. Repair dashboard.js's broken module structure
+### 2d. Repair dashboard.js's broken module structure — ✅ DONE 2026-07-17 (shipped ahead of the v3 plan)
 
-`admin/dashboard.js:8` reads `const Dashboard = () => {}` followed by orphaned top-level `let` declarations — a half-finished refactor that happens to parse (the arrow function is empty and everything after leaks global). It works by accident and will shatter the moment anything redeclares those globals.
+The damage was worse than "a half-finished refactor that happens to parse" — the dashboard was **non-functional end to end**: `const Dashboard = () => {}` left `Dashboard.login` undefined so every onclick threw a TypeError; line 9 read `SPA_CONFIG`, which `dashboard.html` never loads (ReferenceError on load); and the file ended mid-module — `toggleInvite`, `copyInvite`, and `_showError` were referenced but did not exist. Two further defects found in the same audit: run fields were interpolated into `innerHTML` unescaped (a stored-XSS surface aimed at the one tab holding the service-role key, since `shared_runs` allows anon insert), and two markup typos shipped (an orphaned `<label` rendering as literal text, missing `<li` openers on evidence bullets).
 
-**Fix:** restore a proper IIFE/closure around the whole file (matching `app.js`'s `(function () { ... })()` pattern), delete the stray `Dashboard` remnant, and verify login + run rendering still work against real data locally.
+**Fix (applied 2026-07-17):** full closure rebuild matching `app.js`'s pattern, exposing `{ login, load, applyFilter, toggleSignals, toggleInvite, copyInvite }`; the three missing functions implemented (incl. the ND-friendly invite draft); `SPA_CONFIG` references removed (keeper pastes URL::KEY at login); every DB-sourced field now passes through an `esc()` HTML-escaping helper and generated onclick handlers carry only numeric row indexes; markup repaired. Locked by `tests/dashboard_repair.test.js` (10 structural tests; suite 85 green) and verified in-browser via `npx serve` (login error path + dashboard section swap).
 
 ## 3. Part two — Polish (in ship order)
 
@@ -106,7 +106,7 @@ New chambers or game moments · stage-2 challenge system (v4) · stage-3 trial t
 
 Extend the existing suites (75 currently green; all must stay green):
 
-- **Repairs:** structural test that `index.html` contains no external `<script src="http...">` tags at all (locks 2a in forever); test that `style.css` has an `@font-face` for every family named in `.font-od` (locks 2b); `node --check admin/dashboard.js` plus a structural test that it's wrapped in a closure (locks 2d).
+- **Repairs:** structural test that `index.html` contains no external `<script src="http...">` tags at all (locks 2a in forever); test that `style.css` has an `@font-face` for every family named in `.font-od` (locks 2b); `node --check admin/dashboard.js` plus a structural test that it's wrapped in a closure (locks 2d — ✅ already exists: `tests/dashboard_repair.test.js`, which also locks the esc()/XSS and markup repairs beyond what this spec originally asked for).
 - **Sound:** `SoundEngine`'s moment→tone-spec mapping is pure data — test shape, that every game moment in the table has a spec, duration ceiling ≤1.5s, and that the muted flag suppresses scheduling. AudioContext calls stay untested (browser-only, same policy as DOM adapters).
 - **Entrance hero:** `HeroBootTimeline` tests per the incorporated idea doc (stage ordering, reduced-motion collapse).
 - **Wallet:** unified wallet round-trips through save/resume; share payload reads coins from the single source; streak reset/growth logic.

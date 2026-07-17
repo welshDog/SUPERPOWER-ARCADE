@@ -36,6 +36,8 @@
 
 ### Task 1: CDN purge — vendor three.js, delete howler/ethers/supabase-js
 
+> **✅ DONE 2026-07-17 (outside plan execution).** Steps 1–4 complete: structural test in `tests/e2e.test.js` (watched fail→pass), `vendor/three.min.js` vendored (603KB, license header verified), all four CDN tags replaced with the one vendored tag, BROskiWallet tag removed + dormant notice added. Browser-verified: `THREE.REVISION === "128"` from the vendored file, zero non-localhost requests, zero console errors. Step 5 (commit) left for Lyndz — changes are uncommitted in the working tree.
+
 **Files:**
 - Create: `vendor/three.min.js`
 - Modify: `index.html:94-97`, `index.html:102` (BROskiWallet tag), `js/systems/BROskiWallet.js:1-4` (header note)
@@ -121,6 +123,8 @@ git commit -m "fix: zero third-party requests — vendor three.js, drop dead how
 
 ### Task 2: Real OpenDyslexic — self-hosted @font-face
 
+> **✅ DONE 2026-07-17 (outside plan execution).** Steps 1–4 complete: structural test in `tests/e2e.test.js` (watched fail→pass), both woff2 files fetched and magic-bytes-verified (`wOF2`, ~103/108KB), @font-face block added at the top of `style.css`. NOTE: this task's `master`-branch URLs 404 into GitHub HTML pages — the working URLs are `https://raw.githubusercontent.com/antijingoist/opendyslexic/main/compiled/OpenDyslexic-{Regular,Bold}.woff2` (branch is `main`). Browser-verified: `document.fonts.check('16px OpenDyslexic')` and bold both true after load. Step 5 (commit) left for Lyndz. Suite baseline is now **87** green.
+
 **Files:**
 - Create: `fonts/OpenDyslexic-Regular.woff2`, `fonts/OpenDyslexic-Bold.woff2`
 - Modify: `style.css` (add @font-face block above `:root`)
@@ -193,6 +197,8 @@ git commit -m "fix: OpenDyslexic toggle loads the real font — self-hosted woff
 ---
 
 ### Task 3: Rebuild admin/dashboard.js + fix dashboard.html + document Keeper access
+
+> **✅ MOSTLY DONE 2026-07-17 (outside plan execution — design-brain audit session).** The dashboard.js rebuild and dashboard.html `<label>` fix already shipped, locked by `tests/dashboard_repair.test.js` (10 structural tests; baseline is now **85** green, not 75). **Do NOT apply this task's inline dashboard.js listing** — it predates the security hardening and would reintroduce a stored-XSS: the shipped version routes every DB field through an `esc()` helper and passes only numeric row indexes through onclick (`toggleSignals(i)` / `toggleInvite(i)` / `copyInvite(i)`, run data read from the module's `_viewRuns`), whereas the listing below interpolates raw fields and pushes player data through onclick strings. Step 5 (README "local only" access docs, spec §2c) was also completed 2026-07-17 — **this entire task is done**; skip it and keep the shipped `admin/dashboard.js`.
 
 **Files:**
 - Rewrite: `admin/dashboard.js` (whole file — it is truncated mid-file and fatally references `SPA_CONFIG`, which `dashboard.html` never loads)
