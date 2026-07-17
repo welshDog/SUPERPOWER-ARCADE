@@ -119,7 +119,10 @@
     const ctx = {
       difficulty: () => SPA.state.dial.getCurrentLevel(),
       onRound(correct, ms) {
-        SPA.state.tracker.record('game_response', { game: gameId, correct, ms });
+        // The chamber logic already logs each answer to the tracker (with
+        // timeMs + round/level/streak detail). Logging it again here
+        // double-counted every answer — inflating profileMapper retries/volume
+        // and LostScore true-counts. The chamber is the single source of truth.
         const { streak } = SPA.state.wallet.recordAnswer(correct);
         renderWallet(false);
         SPA.sound.play(correct ? 'correct' : 'wrong');

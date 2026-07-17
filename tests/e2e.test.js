@@ -499,3 +499,11 @@ test('vault boss degrades to UI-only without WebGL — no-WebGL soft-lock regres
   assert.ok(tryAt !== -1 && catchAt !== -1, 'THREE setup must be wrapped in try/catch so no-WebGL devices still get a playable DOM chamber');
   assert.ok(tryAt < rendererAt && rendererAt < catchAt, 'WebGLRenderer construction must sit inside the try block');
 });
+
+test('answers are logged once — app.js does not double-record game_response', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const app = readFileSync(join(__dirname, '..', 'app.js'), 'utf8');
+  assert.ok(!app.includes('game_response'),
+    'app.js must not record game_response — the chamber logic records it once. A duplicate in ctx.onRound doubles every answer, inflating profileMapper retries/volume scoring and LostScore true-counts.');
+});

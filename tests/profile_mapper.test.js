@@ -96,3 +96,13 @@ test('evidence never contains interpretive judgment words', () => {
   const all = profile.evidence.join(' ').toLowerCase();
   for (const word of banned) assert.ok(!all.includes(word), `evidence contains banned interpretive word: ${word}`);
 });
+
+test('avg response time is read from the chamber timeMs key, not only ms', () => {
+  const events = [
+    { type: 'game_response', detail: { game: 'pattern-blitz', correct: true, timeMs: 800 }, at: 1 },
+    { type: 'game_response', detail: { game: 'pattern-blitz', correct: true, timeMs: 1000 }, at: 2 }
+  ];
+  const p = mapProfile(run(events));
+  const line = p.evidence.find((n) => /avg response/.test(n));
+  assert.ok(line && /avg response 900ms/.test(line), `expected avg 900ms from timeMs, got: ${line}`);
+});

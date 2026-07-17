@@ -11,7 +11,8 @@ function getProfiles() {
 function stats(events) {
   const responses = events.filter((e) => e.type === 'game_response');
   const correct = responses.filter((e) => e.detail.correct);
-  const times = correct.map((e) => e.detail.ms).filter((ms) => ms > 0);
+  // Chamber records key timing as `timeMs`; older/synthetic events use `ms`.
+  const times = correct.map((e) => e.detail.timeMs ?? e.detail.ms).filter((ms) => ms > 0);
   const avgMs = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
   const accuracy = responses.length ? correct.length / responses.length : 0;
   let retries = 0; // an answer that follows a miss in the same game = kept going
