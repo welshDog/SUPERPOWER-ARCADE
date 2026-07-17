@@ -112,6 +112,11 @@ body.boot-playing .boot-actions > * { opacity: 0; animation: bootFadeUp 0.35s ea
     animation-duration: 0.01s !important; animation-delay: 0s !important;
   }
 }
+/* ── v3 momentum HUD (spec §3d) ── */
+.hud-streak { color: var(--neon-orange); font-variant-numeric: tabular-nums; min-width: 3ch; }
+@keyframes coinPulse { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+#hud-coins.pulse { animation: coinPulse .35s ease; display: inline-block; }
+@media (prefers-reduced-motion: reduce) { #hud-coins.pulse { animation: none; } }
 /* ── v3 chamber interstitial (spec §3c) ── */
 .interstitial-icon { font-size: 4rem; margin-bottom: 12px; animation: bootFadeUp .3s ease; }
 .interstitial-card h2 { animation: bootFadeUp .35s ease; }

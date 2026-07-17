@@ -437,8 +437,8 @@ test('sendRun includes the player\'s actual coin count in the share payload', ()
   const src = readFileSync(join(__dirname, '..', 'app.js'), 'utf8');
   const match = src.match(/async function sendRun\s*\([^)]*\)\s*\{[\s\S]*?\n  \}/);
   assert.ok(match, 'sendRun function not found in app.js');
-  assert.match(match[0], /broskiCoins\s*:\s*SPA\.state\.coins/,
-    'sendRun must pass broskiCoins: SPA.state.coins into buildRunPayload, or shared runs always report 0 coins');
+  assert.match(match[0], /broskiCoins\s*:\s*SPA\.state\.wallet\.coins/,
+    'sendRun must pass broskiCoins: SPA.state.wallet.coins into buildRunPayload, or shared runs always report 0 coins');
 });
 
 test('zero third-party requests — no external script tags in any HTML', () => {

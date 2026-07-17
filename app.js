@@ -71,8 +71,7 @@
       store: new RunStateStore({ storage: window.localStorage }),
       lostScore: null,
       resumed: false,
-      coins: 0,
-      streak: 0,
+      wallet: new Wallet(),
       chamberIndex: 0,
       quest: JSON.parse(localStorage.getItem('spa_quest') || 'null'),
       profile: null
@@ -81,8 +80,20 @@
   }
 
   function setCoins(n) {
-    SPA.state.coins = Math.max(0, n);
-    $('hud-coins').textContent = `\uD83E\uDE99 ${SPA.state.coins}`;
+    SPA.state.wallet.setCoins(n);
+    renderWallet(true);
+  }
+
+  function renderWallet(pulse) {
+    const w = SPA.state.wallet;
+    $('hud-coins').textContent = `\uD83E\uDE99 ${w.coins}`;
+    $('hud-streak').textContent = w.streak >= 2 ? `\uD83D\uDD25${w.streak}` : '';
+    if (pulse) {
+      const el = $('hud-coins');
+      el.classList.remove('pulse');
+      void el.offsetWidth; // restart the animation
+      el.classList.add('pulse');
+    }
   }
 
   function feedback(msg, kind) {
@@ -102,31 +113,33 @@
     SPA.showScreen('screen-game');
     $('game-content').classList.toggle('boss-arena', gameId === 'vault-door');
     $('hud-icon').textContent = game.icon;
-    setCoins(SPA.state.coins);
+    renderWallet(false);
     SPA.state.dial.reset(1);
 
     const ctx = {
       difficulty: () => SPA.state.dial.getCurrentLevel(),
       onRound(correct, ms) {
         SPA.state.tracker.record('game_response', { game: gameId, correct, ms });
-        SPA.state.streak = correct ? SPA.state.streak + 1 : 0;
+        const { streak } = SPA.state.wallet.recordAnswer(correct);
+        renderWallet(false);
         SPA.sound.play(correct ? 'correct' : 'wrong');
         const analysis = SPA.state.dial.recordResponse(correct, ms);
         if (analysis.action !== 'maintain') {
           SPA.state.tracker.record('difficulty_change', { game: gameId, action: analysis.action, level: analysis.level });
           feedback(analysis.action === 'increase' ? '\uD83D\uDE80 Level up!' : '\uD83D\uDEE1\uFE0F Easing off\u2026', analysis.action === 'increase' ? 'success' : 'warning');
         }
-        const reward = SPA.state.dj.processResponse(correct, ms, SPA.state.streak);
+        const reward = SPA.state.dj.processResponse(correct, ms, streak);
         if (reward.drop) {
           SPA.state.tracker.record('coin_drop', { amount: reward.amount });
-          setCoins(SPA.state.coins + reward.amount);
-          SPA.sound.play('coin', { pitchStep: Math.min(SPA.state.streak, 12) });
+          SPA.state.wallet.addCoins(reward.amount);
+          renderWallet(true);
+          SPA.sound.play('coin', { pitchStep: Math.min(streak, 12) });
           if (reward.type === 'gold') SPA.sound.play('streak');
           feedback(reward.message, 'success');
           SPA.state.particles?.emit(window.innerWidth / 2, window.innerHeight / 3, 'coins', reward.amount * 3);
         }
       },
-      grantCoins: (n) => setCoins(SPA.state.coins + n),
+      grantCoins: (n) => { SPA.state.wallet.addCoins(n); renderWallet(true); },
       feedback,
       sound: (m, o) => SPA.sound?.play(m, o),
       trackerRecord: (type, detail) => SPA.state.tracker.record(type, detail),
@@ -199,8 +212,9 @@
   function persistRun(index) {
     SPA.state.store.save({
       chamberIndex: index,
-      coins: SPA.state.coins,
-      streak: SPA.state.streak,
+      wallet: SPA.state.wallet.toJSON(),
+      coins: SPA.state.wallet.coins,   // legacy keys kept so pre-v3 saves and
+      streak: SPA.state.wallet.streak, // any external readers stay valid
       sceneQueue: SPA.state.forkFlow.queue.map((f) => f.id),
       trackerJson: SPA.state.tracker.toJSON(),
       lostScorePending: !!SPA.state.lostScore?.pendingRepair,
@@ -237,8 +251,8 @@
           return nextForkOrChamber(chamberIndex);
         }
         SPA.state.tracker.record('fork_choice', { forkId: fork.id, optionId: opt.id, signal: res.signal });
-        if (res.grantsCoins) setCoins(SPA.state.coins + res.grantsCoins);
-        if (res.costsCoins) setCoins(SPA.state.coins - res.costsCoins);
+        if (res.grantsCoins) { SPA.state.wallet.addCoins(res.grantsCoins); renderWallet(true); }
+        if (res.costsCoins) { SPA.state.wallet.spendCoins(res.costsCoins); renderWallet(true); }
         persistRun(chamberIndex);
         nextForkOrChamber(chamberIndex);
       });
@@ -277,7 +291,7 @@
         name: $('share-name').value,
         contact: $('share-contact').value,
         questCode: SPA.state.quest?.code || '',
-        broskiCoins: SPA.state.coins
+        broskiCoins: SPA.state.wallet.coins
       });
       btn.disabled = true;
       const res = await window.SPA_API.submitRun(payload, window.SPA_CONFIG);
@@ -353,8 +367,8 @@
         SPA.sound.unlock();
         newRunState();
         SPA.state.tracker.restore(savedRun.trackerJson);
-        setCoins(savedRun.coins);
-        SPA.state.streak = savedRun.streak;
+        SPA.state.wallet = Wallet.fromJSON(savedRun.wallet || { coins: savedRun.coins, streak: savedRun.streak });
+        renderWallet(false);
         if (savedRun.dialState) SPA.state.dial.state = savedRun.dialState;
         if (savedRun.djState) SPA.state.dj.state = savedRun.djState;
         (savedRun.sceneQueue || []).forEach((id) => {
