@@ -148,3 +148,22 @@ test('VaultDoor: abandon marks isComplete', () => {
   assert.equal(vd.isComplete(), true);
   assert.equal(vd.isAbandoned(), true);
 });
+
+test('VaultDoor: attempt reports how many marks are aligned (positional feedback)', () => {
+  const vd = new VaultDoor({ tracker: makeTracker() });
+  vd.start();
+  const sol = vd._getSolutionForTest();
+  // positions 0,1 correct; 2,3 deliberately wrong (a glyph guaranteed != the solution's)
+  const combo = sol.map((g, i) => (i < 2 ? g : vd.GLYPHS.find((x) => x !== sol[i])));
+  const res = vd.attempt(combo);
+  assert.equal(res.aligned, 2, 'reports 2 of 4 marks aligned');
+  assert.equal(res.correct, false);
+});
+
+test('VaultDoor: solved combo reports all four aligned', () => {
+  const vd = new VaultDoor({ tracker: makeTracker() });
+  vd.start();
+  const res = vd.attempt(vd._getSolutionForTest());
+  assert.equal(res.aligned, 4);
+  assert.equal(res.correct, true);
+});

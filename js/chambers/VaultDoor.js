@@ -39,6 +39,7 @@ class VaultDoor {
     this.attempts++;
     const key     = combo.join('|');
     const correct = combo.join('') === this._solution.join('');
+    const aligned = combo.reduce((n, g, i) => n + (g === this._solution[i] ? 1 : 0), 0);
     this._tried.add(key);
     const unusualGlyphs  = ['⍾','⎔','⌖'];
     const triedUnusual   = combo.some(g => unusualGlyphs.includes(g));
@@ -59,6 +60,7 @@ class VaultDoor {
     return {
       correct,
       attempts: this.attempts,
+      aligned,
       nudge   : !correct && this.attempts >= 5 ? 'The vault remembers every try.' : null,
     };
   }

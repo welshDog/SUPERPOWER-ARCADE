@@ -47,6 +47,16 @@
       title.style.textShadow = '0 0 10px #0f0';
       uiLayer.appendChild(title);
 
+      // Teach the mechanic so the lock never reads as broken: each guess reports
+      // how many marks landed in the right place. Deduce the rest — or walk away.
+      const subtitle = document.createElement('p');
+      subtitle.textContent = 'Cycle each mark, then UNLOCK. The vault tells you how many are aligned.';
+      subtitle.style.color = 'rgba(255,255,255,0.7)';
+      subtitle.style.fontSize = '0.95rem';
+      subtitle.style.margin = '6px 0 0';
+      subtitle.style.maxWidth = '32ch';
+      uiLayer.appendChild(subtitle);
+
       const slotsContainer = document.createElement('div');
       slotsContainer.style.display = 'flex';
       slotsContainer.style.gap = '20px';
@@ -75,14 +85,26 @@
       }
       uiLayer.appendChild(slotsContainer);
 
+      // Prominent aligned-count read-out, inside the vault UI so it's always
+      // seen (the small #game-feedback line sits below the 3D canvas).
+      const statusEl = document.createElement('div');
+      statusEl.style.marginTop = '18px';
+      statusEl.style.minHeight = '1.4em';
+      statusEl.style.fontSize = '1.15rem';
+      statusEl.style.fontWeight = '700';
+      statusEl.style.pointerEvents = 'none';
+      uiLayer.appendChild(statusEl);
+
       const submitBtn = document.createElement('button');
       submitBtn.className = 'btn btn-primary';
-      submitBtn.style.marginTop = '30px';
+      submitBtn.style.marginTop = '18px';
       submitBtn.style.pointerEvents = 'auto';
       submitBtn.textContent = 'UNLOCK';
       submitBtn.onclick = () => {
         const res = logic.attempt(currentCombo);
         if (res.correct) {
+          statusEl.textContent = '🎉 ALL FOUR ALIGNED — VAULT OPENED';
+          statusEl.style.color = '#2ECC71';
           ctx.feedback('VAULT OPENED', 'success');
           ctx.sound?.('vault-open');
           // Grant BROski$
@@ -94,7 +116,10 @@
             ctx.complete();
           }, 3500);
         } else {
-          ctx.feedback(res.nudge || 'ACCESS DENIED', 'warning');
+          // Progress feedback — the fix for "nothing works to answer it".
+          statusEl.textContent = `${res.aligned} / 4 marks aligned`;
+          statusEl.style.color = res.aligned >= 3 ? '#FFD700' : '#4ECDC4';
+          if (res.nudge) ctx.feedback(res.nudge, 'warning');
           // Smooth camera shake setup
           cameraShake = 1.0;
           // Same threshold the nudge text uses (attempts >= 5) so the
