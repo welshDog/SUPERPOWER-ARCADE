@@ -1,4 +1,10 @@
 /**
+ * ⚠️ DORMANT SCAFFOLD — not loaded by index.html since v3.
+ * Web3/on-chain BROski$ minting is out of scope until explicitly signed off
+ * (see docs/superpowers/specs/2026-07-17-v3-polish-pack-design.md §3d).
+ * Local coin/streak accounting lives in js/core/Wallet.js.
+ */
+/**
  * BROskiWallet — Web3 Local economy state manager.
  * Tracks BROski$ earned during the run and mints on-chain.
  */

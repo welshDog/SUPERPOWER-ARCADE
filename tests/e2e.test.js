@@ -6,7 +6,7 @@
 
 import { strict as assert } from 'node:assert';
 import { describe, test, before } from 'node:test';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ForkFlow from '../js/core/ForkFlow.js';
@@ -439,4 +439,26 @@ test('sendRun includes the player\'s actual coin count in the share payload', ()
   assert.ok(match, 'sendRun function not found in app.js');
   assert.match(match[0], /broskiCoins\s*:\s*SPA\.state\.coins/,
     'sendRun must pass broskiCoins: SPA.state.coins into buildRunPayload, or shared runs always report 0 coins');
+});
+
+test('zero third-party requests — no external script tags in any HTML', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  for (const f of ['index.html', join('admin', 'dashboard.html')]) {
+    const src = readFileSync(join(__dirname, '..', f), 'utf8');
+    assert.ok(!/<script[^>]+src=["']https?:/i.test(src), `${f} loads an external script`);
+  }
+  assert.ok(existsSync(join(__dirname, '..', 'vendor', 'three.min.js')),
+    'three.js must be vendored locally (vaultDoor.js needs window.THREE)');
+});
+
+test('the OpenDyslexic toggle is real — @font-face exists and font files ship', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const css = readFileSync(join(__dirname, '..', 'style.css'), 'utf8');
+  assert.match(css, /@font-face\s*\{[^}]*OpenDyslexic/s, 'style.css must declare @font-face for OpenDyslexic');
+  assert.match(css, /font-display:\s*swap/, 'use font-display: swap so text never blocks on the font');
+  for (const f of ['OpenDyslexic-Regular.woff2', 'OpenDyslexic-Bold.woff2']) {
+    assert.ok(existsSync(join(__dirname, '..', 'fonts', f)), `fonts/${f} missing`);
+  }
 });
