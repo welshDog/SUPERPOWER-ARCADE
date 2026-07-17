@@ -32,6 +32,30 @@
     }
   }
 
+  function showInterstitial(gameId, onDone) {
+    // Deliberate deviation from spec wording "mounts behind the card": chambers
+    // start per-round timers on mount, so mounting behind would eat play time.
+    // Mounting is synchronous, so dismiss -> playable is still instant.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return onDone();
+    const meta = window.InterstitialCard.cardFor(gameId);
+    SPA.showScreen('screen-interstitial');
+    $('interstitial-icon').textContent = meta.icon;
+    $('interstitial-name').textContent = meta.name;
+    let done = false;
+    const el = $('screen-interstitial');
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(t);
+      el.removeEventListener('click', finish);
+      document.removeEventListener('keydown', finish);
+      onDone();
+    };
+    const t = setTimeout(finish, window.InterstitialCard.INTERSTITIAL_MS);
+    el.addEventListener('click', finish);
+    document.addEventListener('keydown', finish);
+  }
+
   SPA.showScreen = function (id) {
     document.querySelectorAll('.screen').forEach((s) => s.classList.add('hidden'));
     $(id).classList.remove('hidden');
@@ -190,7 +214,7 @@
     const fork = SPA.state.forkFlow.next();
     if (fork) return showFork(fork, index);
     const nextIndex = index + 1;
-    if (nextIndex < SPA.CHAMBERS.length) return runChamber(nextIndex);
+    if (nextIndex < SPA.CHAMBERS.length) return showInterstitial(SPA.CHAMBERS[nextIndex], () => runChamber(nextIndex));
     return reveal();
   }
 
@@ -314,7 +338,7 @@
         SPA.sound.unlock();
         newRunState();
         SPA.state.tracker.startRun(b.dataset.energy);
-        runChamber(0);
+        showInterstitial(SPA.CHAMBERS[0], () => runChamber(0));
       })
     );
     $('btn-to-share').addEventListener('click', showShare);

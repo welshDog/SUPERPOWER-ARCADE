@@ -112,3 +112,9 @@ body.boot-playing .boot-actions > * { opacity: 0; animation: bootFadeUp 0.35s ea
     animation-duration: 0.01s !important; animation-delay: 0s !important;
   }
 }
+/* ── v3 chamber interstitial (spec §3c) ── */
+.interstitial-icon { font-size: 4rem; margin-bottom: 12px; animation: bootFadeUp .3s ease; }
+.interstitial-card h2 { animation: bootFadeUp .35s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .interstitial-icon, .interstitial-card h2 { animation: none; }
+}
