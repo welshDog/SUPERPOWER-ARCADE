@@ -1241,6 +1241,8 @@ git commit -m "feat: Wallet — unified coin/streak source of truth"
 
 ### Task 10: Wallet wiring + momentum HUD
 
+> **✅ DONE 2026-07-17** (commit b9b1d92). One plan gap fixed en route: the e2e sendRun structural test asserted `broskiCoins: SPA.state.coins` literally — its expectation moved to `SPA.state.wallet.coins` with the refactor (same intent). Browser-verified: 🔥 meter from streak 2 + reset on miss, coin drop with pulse, resume restores exact wallet state from BOTH v3-format and legacy no-wallet-key saves.
+
 **Files:**
 - Modify: `index.html` (script tag + HUD streak span), `style.css` (streak + pulse), `app.js` (swap coins/streak to Wallet)
 
@@ -1326,6 +1328,8 @@ git commit -m "feat: unified Wallet drives the HUD — visible streak momentum, 
 ---
 
 ### Task 11: Docs, final regression, DoD run
+
+> **✅ DONE 2026-07-17** (commit 8f87553) with deviations: work went straight to main per Lyndz's session-long direction (no feat branch/PR — skip Step 5's branch+PR flow); final regression = **100 green** (beat the ~86 estimate). DoD: machine-verifiable items all verified across the per-task browser checks (boot + INSERT COIN mid-animation, resume skips boot, interstitials + skip, wallet/streak/pulse, both save formats, zero third-party requests, no-WebGL boss completion). **Still needs human hands:** sound audibility/feel across a full run, OpenDyslexic glyphs eyeballed in Word Vault, a real share POST, and the Keeper dashboard against the real service key.
 
 **Files:**
 - Modify: `README.md`, `docs/README.md`, `tests/e2e.test.js` (only if any structural gap emerged)
