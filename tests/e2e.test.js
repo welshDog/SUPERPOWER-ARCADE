@@ -462,3 +462,23 @@ test('the OpenDyslexic toggle is real — @font-face exists and font files ship'
     assert.ok(existsSync(join(__dirname, '..', 'fonts', f)), `fonts/${f} missing`);
   }
 });
+
+test('vault boss arena is a positioned, sized stage — black-screen regression lock', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const css = readFileSync(join(__dirname, '..', 'style.css'), 'utf8');
+  const base = css.match(/#game-content\s*\{[^}]*\}/);
+  assert.ok(base && /position:\s*relative/.test(base[0]),
+    '#game-content needs position: relative — without it the vault canvas anchors to the viewport and paints over the whole page');
+  const boss = css.match(/#game-content\.boss-arena\s*\{[^}]*\}/);
+  assert.ok(boss && /height:/.test(boss[0]),
+    '#game-content.boss-arena needs an explicit height — a 0-height container gives the WebGL renderer a 0-pixel buffer');
+  const app = readFileSync(join(__dirname, '..', 'app.js'), 'utf8');
+  assert.ok(app.includes("classList.toggle('boss-arena'"),
+    'runChamber must toggle boss-arena on #game-content so the height applies only to the vault chamber');
+  const vd = readFileSync(join(__dirname, '..', 'js', 'games', 'vaultDoor.js'), 'utf8');
+  const zAt = vd.indexOf('uiLayer.style.zIndex');
+  const canvasAt = vd.indexOf('el.appendChild(renderer.domElement)');
+  assert.ok(zAt !== -1, 'uiLayer needs a zIndex — the renderer canvas is appended later and paints above the buttons otherwise');
+  assert.ok(canvasAt === -1 || zAt < canvasAt, 'uiLayer zIndex must be set before the renderer canvas is appended');
+});

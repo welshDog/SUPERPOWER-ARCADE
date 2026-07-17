@@ -32,6 +32,7 @@
       uiLayer.style.justifyContent = 'center';
       uiLayer.style.alignItems = 'center';
       uiLayer.style.pointerEvents = 'none'; // Let clicks pass to 3D if needed, but we will use DOM buttons for glyphs for simplicity
+      uiLayer.style.zIndex = '1'; // above the renderer canvas, which is appended later
       
       const title = document.createElement('h2');
       title.textContent = gameState.narrative;

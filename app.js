@@ -52,6 +52,7 @@
     const game = SPA.games[gameId];
     if (!game) { console.error(`game ${gameId} not registered`); return afterChamber(index); }
     SPA.showScreen('screen-game');
+    $('game-content').classList.toggle('boss-arena', gameId === 'vault-door');
     $('hud-icon').textContent = game.icon;
     setCoins(SPA.state.coins);
     SPA.state.dial.reset(1);
