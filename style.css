@@ -117,6 +117,18 @@ body.boot-playing .boot-actions > * { opacity: 0; animation: bootFadeUp 0.35s ea
 @keyframes coinPulse { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
 #hud-coins.pulse { animation: coinPulse .35s ease; display: inline-block; }
 @media (prefers-reduced-motion: reduce) { #hud-coins.pulse { animation: none; } }
+/* ── v3 vault door — mobile-fit glyph lock ── */
+.vault-slots {
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(8px, 3vw, 20px);
+  width: 100%; max-width: 340px;
+  margin: clamp(28px, 8vh, 90px) auto 0;
+}
+.vault-slot {
+  flex: 1 1 0; min-width: 0; max-width: 74px; margin: 0; padding: 0;
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.35rem, 7vw, 2rem);
+}
 /* ── v3 chamber interstitial (spec §3c) ── */
 .interstitial-icon { font-size: 4rem; margin-bottom: 12px; animation: bootFadeUp .3s ease; }
 .interstitial-card h2 { animation: bootFadeUp .35s ease; }

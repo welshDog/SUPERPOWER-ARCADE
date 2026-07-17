@@ -57,18 +57,17 @@
       subtitle.style.maxWidth = '32ch';
       uiLayer.appendChild(subtitle);
 
+      // .vault-slots / .vault-slot: responsive so four slots shrink to fit a
+      // phone instead of overflowing (the old fixed 60px min-width + .btn
+      // padding made the row 473px wide on a 366px screen — outer slots clipped).
       const slotsContainer = document.createElement('div');
-      slotsContainer.style.display = 'flex';
-      slotsContainer.style.gap = '20px';
+      slotsContainer.className = 'vault-slots';
       slotsContainer.style.pointerEvents = 'auto';
-      slotsContainer.style.marginTop = '100px'; // push down to see the 3D vault
 
       const slotBtns = [];
       for (let i = 0; i < gameState.slots; i++) {
         const btn = document.createElement('button');
-        btn.className = 'btn btn-secondary';
-        btn.style.fontSize = '2rem';
-        btn.style.minWidth = '60px';
+        btn.className = 'btn btn-secondary vault-slot';
         btn.textContent = currentCombo[i];
         btn.onclick = () => {
           let idx = gameState.glyphs.indexOf(currentCombo[i]);

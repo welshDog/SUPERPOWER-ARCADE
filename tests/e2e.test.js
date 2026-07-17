@@ -515,3 +515,13 @@ test('NumberRush displays the full sequence — no hidden term before the "?"', 
   assert.ok(!/sequence\.slice\(0,\s*3\)/.test(src),
     'numberRush.js must not slice the 4-term sequence to 3 — it hides a term, so "2, 3, 4, ?" demands 6 (the term after a hidden 5) instead of 5');
 });
+
+test('Vault Door slots fit mobile — responsive class, no fixed 60px min-width that overflows phones', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const vd = readFileSync(join(__dirname, '..', 'js', 'games', 'vaultDoor.js'), 'utf8');
+  assert.ok(vd.includes('vault-slot'), 'slot buttons should use the responsive .vault-slot class');
+  assert.ok(!/minWidth\s*=\s*'60px'/.test(vd), 'slots must not hard-set a 60px min-width — four of them overflow a phone');
+  const css = readFileSync(join(__dirname, '..', 'style.css'), 'utf8');
+  assert.ok(/\.vault-slot\b/.test(css), 'style.css needs a .vault-slot rule so slots shrink to fit narrow screens');
+});
