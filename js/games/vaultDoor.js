@@ -20,6 +20,13 @@
       const gameState = logic.start();
       let currentCombo = [gameState.glyphs[0], gameState.glyphs[0], gameState.glyphs[0], gameState.glyphs[0]];
 
+      // Animation state the UI handlers below close over — initialized BEFORE
+      // those handlers are created, so a failed 3D setup (no WebGL) can't leave
+      // them referencing TDZ bindings and soft-lock the combo.
+      let rings = [];
+      let isOpening = false;
+      let cameraShake = 0;
+
       // UI Overlay for interaction
       const uiLayer = document.createElement('div');
       uiLayer.style.position = 'absolute';
@@ -117,6 +124,9 @@
       el.appendChild(uiLayer);
 
       // --- THREE.JS SETUP ---
+      // Wrapped so devices without WebGL still get a fully playable DOM chamber:
+      // no 3D backdrop, but slots, UNLOCK, abandon, and completion all work.
+      try {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x050505);
       scene.fog = new THREE.Fog(0x050505, 10, 50);
@@ -159,8 +169,7 @@
       door.rotation.x = Math.PI / 2;
       scene.add(door);
 
-      // Rings (to represent slots)
-      const rings = [];
+      // Rings (to represent slots) — array itself is hoisted above the UI handlers
       for (let i = 0; i < 4; i++) {
         const ringGeo = new THREE.TorusGeometry(1 + i * 0.8, 0.15, 32, 100);
         const ringMat = new THREE.MeshStandardMaterial({ 
@@ -176,8 +185,6 @@
         rings.push(ring);
       }
 
-      let isOpening = false;
-      let cameraShake = 0;
       let frameId;
       const baseCameraPos = new THREE.Vector3(0, 0, 10);
 
@@ -229,6 +236,11 @@
 
       // Cleanup on unmount (if we had an unmount hook, but finishChamber clears the DOM anyway)
       // The DOM clearing in app.js will remove the canvas.
+      } catch (err) {
+        // No WebGL (blocked GPU, ancient device): skip the 3D backdrop entirely.
+        // rings stays empty, so the slot handlers' `if (rings[i])` guards no-op.
+        console.warn('VaultDoor: 3D backdrop disabled —', err && err.message ? err.message : err);
+      }
     }
   };
 })();

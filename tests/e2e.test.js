@@ -482,3 +482,20 @@ test('vault boss arena is a positioned, sized stage — black-screen regression 
   assert.ok(zAt !== -1, 'uiLayer needs a zIndex — the renderer canvas is appended later and paints above the buttons otherwise');
   assert.ok(canvasAt === -1 || zAt < canvasAt, 'uiLayer zIndex must be set before the renderer canvas is appended');
 });
+
+test('vault boss degrades to UI-only without WebGL — no-WebGL soft-lock regression', () => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = join(__filename, '..');
+  const vd = readFileSync(join(__dirname, '..', 'js', 'games', 'vaultDoor.js'), 'utf8');
+  const uiAt = vd.indexOf('const uiLayer');
+  for (const decl of ['let rings', 'let isOpening', 'let cameraShake']) {
+    const at = vd.indexOf(decl);
+    assert.ok(at !== -1 && at < uiAt,
+      `${decl} must be initialized before the UI handlers that close over it — otherwise a failed 3D setup leaves them hitting TDZ bindings and soft-locks the combo`);
+  }
+  const tryAt = vd.indexOf('try {');
+  const rendererAt = vd.indexOf('new THREE.WebGLRenderer');
+  const catchAt = vd.indexOf('} catch');
+  assert.ok(tryAt !== -1 && catchAt !== -1, 'THREE setup must be wrapped in try/catch so no-WebGL devices still get a playable DOM chamber');
+  assert.ok(tryAt < rendererAt && rendererAt < catchAt, 'WebGLRenderer construction must sit inside the try block');
+});
