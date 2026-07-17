@@ -22,9 +22,13 @@ The Keeper (you) sees an evidence-first dashboard. Players never see a diagnosis
 
 | Archetype | Core strength |
 |---|---|
-| `PATTERN_SEEKER` | Visual pattern recognition, sequential logic |
-| `VOLT_RANGER` | Numerical fluency, rapid calculation |
-| `SYNC_WEAVER` | Rhythm, timing, cross-modal coordination |
+| `hyperfocus_hunter` — ⚡ Hyperfocus Hunter | Speed, momentum, relentless retries |
+| `pattern_detective` — 🔍 Pattern Detective | Precision, spotting what everyone else misses |
+| `systems_architect` — 🧩 Systems Architect | Sequencing, holding the whole structure in mind |
+| `chaos_creator` — 🎨 Chaos Creator | Experimentation, finding the door nobody else saw |
+| `wild_card` — 🌀 Wild Card | Balanced across all four — awarded when no single strength dominates |
+
+Archetype ids, names, and blurbs live in `data/profiles.js`; the mapping logic (including the `wild_card` rule: top score < 40 or a lead of < 10 over second place) is in `js/core/profileMapper.js`.
 
 ---
 
@@ -153,10 +157,15 @@ on conflict (code) do nothing;
 
 ## Admin / Keeper Dashboard
 
-Access: `https://your-deployment.vercel.app/admin/`
+Access — **local only, by design**. Prod `/admin/*` is blocked for *everyone* (including the Keeper) by `vercel.json`'s route rule (`/admin/*` → 404), with no bypass: real auth would need server-side middleware this static architecture doesn't have, and a half-secure workaround (secret query param, obscure path) would be worse than an honest "run it locally." The dashboard is a static page that talks straight to Supabase, so it works identically from your machine:
 
-- Blocked from public traffic by `vercel.json`'s route rule (`/admin/*` → 404) — the files still exist in the deployment, this just stops casual discovery; it's not a real access-control boundary, so don't rely on it alone for anything sensitive
-- `admin/dashboard.js` prompts for `SUPABASE_URL::SERVICE_ROLE_KEY` at runtime (never hardcoded) to read `keeper_runs`
+```bash
+npx serve .
+# then open http://localhost:3000/admin/dashboard.html
+# and paste  SUPABASE_URL::SERVICE_ROLE_KEY  at the login prompt
+```
+
+- `admin/dashboard.js` prompts for `SUPABASE_URL::SERVICE_ROLE_KEY` at runtime (never hardcoded, never persisted) to read `keeper_runs`
 - Displays evidence-first signals: archetype, chamber scores, ethics choice, all the descriptive (never interpretive) evidence strings from `js/core/profileMapper.js`
 - Generates ND-friendly outreach copy per player
 
@@ -220,7 +229,7 @@ SUPERPOWER-ARCADE/
 - Nothing leaves the device unless the player taps "Send my run" on the share screen — "Keep it to myself" submits nothing, ever
 - If they do share, `player_name` and `contact` are stored exactly as the player typed them — that's the point (the Keeper needs a way to reach a legendary run) — but it's explicit, one screen, opt-in per run, never silently collected. No IP address or other tracking identifier is captured anywhere
 - Archetypes and evidence describe strengths, never diagnoses — evidence strings are descriptive ("reported 12 when the true count was 8"), never interpretive ("dishonest"), enforced by a test that scans for banned judgment words
-- The Keeper dashboard's `/admin/*` route is blocked from casual discovery at the Vercel edge (see Admin / Keeper Dashboard above) and additionally requires the service-role key to actually read anything — but this is not hardened access control, just a deterrent; don't treat it as a security boundary on its own
+- The Keeper dashboard is **local-only**: prod `/admin/*` is blocked for everyone at the Vercel edge, and reading anything requires the service-role key pasted at runtime on the Keeper's own machine (see Admin / Keeper Dashboard above)
 - No third-party analytics or tracking scripts
 
 ---
