@@ -86,6 +86,7 @@
       onRound(correct, ms) {
         SPA.state.tracker.record('game_response', { game: gameId, correct, ms });
         SPA.state.streak = correct ? SPA.state.streak + 1 : 0;
+        SPA.sound.play(correct ? 'correct' : 'wrong');
         const analysis = SPA.state.dial.recordResponse(correct, ms);
         if (analysis.action !== 'maintain') {
           SPA.state.tracker.record('difficulty_change', { game: gameId, action: analysis.action, level: analysis.level });
@@ -95,12 +96,15 @@
         if (reward.drop) {
           SPA.state.tracker.record('coin_drop', { amount: reward.amount });
           setCoins(SPA.state.coins + reward.amount);
+          SPA.sound.play('coin', { pitchStep: Math.min(SPA.state.streak, 12) });
+          if (reward.type === 'gold') SPA.sound.play('streak');
           feedback(reward.message, 'success');
           SPA.state.particles?.emit(window.innerWidth / 2, window.innerHeight / 3, 'coins', reward.amount * 3);
         }
       },
       grantCoins: (n) => setCoins(SPA.state.coins + n),
       feedback,
+      sound: (m, o) => SPA.sound?.play(m, o),
       trackerRecord: (type, detail) => SPA.state.tracker.record(type, detail),
       complete: () => finishChamber(index)
     };
@@ -128,7 +132,7 @@
     finishing = true;
     clearInterval(chamberTimer);
     chamberTimer = null;
-    setTimeout(() => { finishing = false; afterChamber(index); }, 400);
+    setTimeout(() => { finishing = false; SPA.sound.play('chamber-complete'); afterChamber(index); }, 400);
   }
 
   function afterChamber(index) {
@@ -193,6 +197,7 @@
   // ---- forks ----
   function showFork(fork, chamberIndex) {
     SPA.showScreen('screen-fork');
+    SPA.sound.play('fork');
     $('fork-prompt').textContent = fork.prompt;
     const box = $('fork-options');
     box.innerHTML = '';
@@ -287,7 +292,17 @@
 
   // ---- wiring ----
   document.addEventListener('DOMContentLoaded', () => {
+    SPA.sound = new SoundEngine({
+      storage: window.localStorage,
+      prefersReduced: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    });
+    const muteBtn = $('btn-mute');
+    const renderMute = () => { muteBtn.textContent = SPA.sound.muted ? '🔇' : '🔊'; };
+    renderMute();
+    muteBtn.addEventListener('click', () => { SPA.sound.setMuted(!SPA.sound.muted); renderMute(); });
+
     $('btn-enter').addEventListener('click', () => {
+      SPA.sound.unlock();
       heroField?.stop();
       document.body.classList.remove('boot-playing');
       SPA.showScreen('screen-energy');
@@ -296,6 +311,7 @@
     $('btn-quest-go').addEventListener('click', tryQuestCode);
     document.querySelectorAll('.btn-energy').forEach((b) =>
       b.addEventListener('click', () => {
+        SPA.sound.unlock();
         newRunState();
         SPA.state.tracker.startRun(b.dataset.energy);
         runChamber(0);
@@ -310,6 +326,7 @@
     if (savedRun) {
       SPA.showScreen('screen-resume');
       $('btn-resume').addEventListener('click', () => {
+        SPA.sound.unlock();
         newRunState();
         SPA.state.tracker.restore(savedRun.trackerJson);
         setCoins(savedRun.coins);

@@ -84,6 +84,7 @@
         const res = logic.attempt(currentCombo);
         if (res.correct) {
           ctx.feedback('VAULT OPENED', 'success');
+          ctx.sound?.('vault-open');
           // Grant BROski$
           ctx.grantCoins(500); // 500 BROski$ for beating the boss
 
