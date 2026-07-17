@@ -462,6 +462,8 @@ git commit -m "fix: rebuild truncated Keeper dashboard — closed IIFE, no SPA_C
 
 ### Task 4: HeroBootTimeline — pure timing module
 
+> **✅ DONE 2026-07-17** exactly as specced (commit 93654e9): TDD red→green, `tests/hero_boot_timeline.test.js` 2 tests.
+
 **Files:**
 - Create: `js/core/HeroBootTimeline.js`
 - Test: `tests/hero_boot_timeline.test.js` (create)
@@ -537,6 +539,8 @@ git commit -m "feat: HeroBootTimeline — pure boot-sequence timing with reduced
 ---
 
 ### Task 5: Entrance hero — HeroField canvas + markup + CSS + app.js wiring
+
+> **✅ DONE 2026-07-17** exactly as specced (commit d7c7787). Browser-verified: stagger delays applied per timeline, field runs on cold load, INSERT COIN tears down (boot-playing removed, RAF stopped), resume path skips the boot, Start fresh replays it. reduced-motion collapse covered by unit tests + CSS media query (not browser-emulated). Suite baseline: **91** green.
 
 **Files:**
 - Create: `js/systems/HeroField.js`
