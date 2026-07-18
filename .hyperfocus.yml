@@ -1,0 +1,12 @@
+# HyperFocus Z0ne repo manifest - read by scripts/gen_repo_map.py
+# Edit this file, then re-run the generator. Never hand-edit the map.
+
+name: "SUPERPOWER-ARCADE"
+emoji: "🕹️"
+tagline: "ND strengths arcade with a hidden hiring signal — 6 chambers + boss door + ethics fork"
+category: "games"
+stack: "Vite + React"
+first_doc: "README.md"
+tier: "BUILDING"
+url: ""
+notes: "hottest repo in the ecosystem"
